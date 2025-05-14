@@ -1,0 +1,44 @@
+spring:
+    datasource:
+        url: jdbc:postgresql://localhost:5432/SurveyDB
+        username: surveyuser
+        password: surveypass
+        driver-class-name: org.postgresql.Driver
+    jpa:
+        database-platform: org.hibernate.dialect.PostgreSQLDialect
+        hibernate:
+            ddl-auto: update  # Keep this as update to preserve data between restarts
+        properties:
+            hibernate:
+                format_sql: true
+                show_sql: true
+                jdbc:
+                    lob:
+                        non_contextual_creation: true
+        open-in-view: false
+        # Add this to allow data.sql to run after tables are created/updated
+        defer-datasource-initialization: true
+
+    # Add this section to control SQL initialization
+    sql:
+        init:
+            mode: always  # Options: always, never, embedded (only for embedded databases)
+            # If you want to use a custom named file instead of data.sql:
+            # data-locations: classpath:test-data.sql
+
+# Logging configuration (keep as is)
+logging:
+    level:
+        org.hibernate.SQL: DEBUG
+        org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+        com.darknessopirate.appvsurveyapi: DEBUG
+
+# Swagger/OpenAPI configuration
+springdoc:
+    api-docs:
+        path: /api-docs
+    swagger-ui:
+        path: /swagger-ui.html
+        operations-sorter: method
+        tags-sorter: alpha
+    default-produces-media-type: application/json
