@@ -14,7 +14,7 @@ interface QuestionRepository : JpaRepository<Question, Long> {
     fun findQuestionsNotInSurvey(surveyId: Long): List<Question>
 
     @Query("SELECT q FROM Question q LEFT JOIN FETCH q.possibleAnswers WHERE q.id = :id")
-    fun findByIdWithAnswers(id: Long): Optional<Question>
+    fun findByIdWithAnswers(id: Long): Question?
 
     @Query("SELECT DISTINCT q FROM Question q LEFT JOIN FETCH q.possibleAnswers WHERE q.id NOT IN (SELECT q2.id FROM Question q2 WHERE q2.survey.id = :surveyId)")
     fun findQuestionsNotInSurveyWithAnswers(surveyId: Long): List<Question>

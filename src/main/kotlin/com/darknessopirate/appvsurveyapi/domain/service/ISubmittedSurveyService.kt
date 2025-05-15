@@ -4,7 +4,7 @@ import com.darknessopirate.appvsurveyapi.domain.model.SubmittedSurvey
 import com.darknessopirate.appvsurveyapi.domain.model.UserAnswer
 import java.time.LocalDateTime
 
-interface SubmittedSurveyService {
+interface ISubmittedSurveyService {
     fun createSubmission(surveyId: Long, userAnswers: List<UserAnswer>): SubmittedSurvey
     fun getSubmissionById(id: Long): SubmittedSurvey
     fun getSubmissionsBySurveyId(surveyId: Long): List<SubmittedSurvey>

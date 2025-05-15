@@ -1,12 +1,19 @@
 package com.darknessopirate.appvsurveyapi.domain.model
 
 import com.darknessopirate.appvsurveyapi.domain.enums.QuestionType
-import jakarta.persistence.*
+import jakarta.persistence.CascadeType
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
+import jakarta.persistence.FetchType
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToMany
 
-// TODO: TRY TO ADD A FLAG isShared to indicate whether question can be reused(only by copying, no relations)
-@Entity
-@Table(name = "questions")
-data class Question(
+// TODO: TRY TO SPLITUP QUESTIONS INTO OPEN AND CLOSED
+data class OpenQuestion: Question ()
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
@@ -24,6 +31,4 @@ data class Question(
 
     var displayOrder: Int = 0,
 
-    @OneToMany(mappedBy = "question", cascade = [CascadeType.ALL], orphanRemoval = true)
-    val possibleAnswers: MutableList<QuestionAnswer> = mutableListOf()
 )

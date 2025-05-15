@@ -16,13 +16,12 @@ spring:
                     lob:
                         non_contextual_creation: true
         open-in-view: false
-        # Add this to allow data.sql to run after tables are created/updated
+        # allow data.sql to run after tables are created/updated
         defer-datasource-initialization: true
 
-    # Add this section to control SQL initialization
     sql:
         init:
-            mode: always  # Options: always, never, embedded (only for embedded databases)
+            mode: always  # Options: always, never, embedded
             # If you want to use a custom named file instead of data.sql:
             # data-locations: classpath:test-data.sql
 
@@ -39,6 +38,7 @@ springdoc:
         path: /api-docs
     swagger-ui:
         path: /swagger-ui.html
-        operations-sorter: method
+        operations-sorter: method & alpha
         tags-sorter: alpha
+
     default-produces-media-type: application/json

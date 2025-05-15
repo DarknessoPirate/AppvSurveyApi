@@ -6,6 +6,6 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface UserAnswerRepository : JpaRepository<UserAnswer, Long> {
-    fun findBySubmittedSurveyId(responseId: Long): List<UserAnswer>
+    fun findBySubmittedSurveyId(surveyId: Long): List<UserAnswer>
     fun findByQuestionId(questionId: Long): List<UserAnswer>
 }

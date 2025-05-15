@@ -3,7 +3,7 @@ package com.darknessopirate.appvsurveyapi.domain.service
 import com.darknessopirate.appvsurveyapi.domain.model.Question
 import com.darknessopirate.appvsurveyapi.domain.model.Survey
 
-interface SurveyService {
+interface ISurveyService {
     fun createSurvey(survey: Survey): Survey
     fun getSurveyById(id: Long): Survey
     fun getSurveyByAccessCode(accessCode: String): Survey

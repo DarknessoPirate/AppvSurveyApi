@@ -3,7 +3,7 @@ package com.darknessopirate.appvsurveyapi.domain.service
 import com.darknessopirate.appvsurveyapi.domain.enums.QuestionType
 import com.darknessopirate.appvsurveyapi.domain.model.Question
 
-interface QuestionService {
+interface IQuestionService {
     fun createQuestion(question: Question): Question
     fun getQuestionById(id: Long): Question
     fun updateQuestion(id: Long, question: Question): Question

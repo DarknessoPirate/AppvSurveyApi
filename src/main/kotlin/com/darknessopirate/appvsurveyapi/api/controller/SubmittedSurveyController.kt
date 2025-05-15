@@ -3,8 +3,8 @@ package com.darknessopirate.appvsurveyapi.api.controller
 import com.darknessopirate.appvsurveyapi.api.dto.request.SubmittedSurveyRequest
 import com.darknessopirate.appvsurveyapi.api.dto.response.SubmittedSurveyResponse
 import com.darknessopirate.appvsurveyapi.api.dto.response.UserAnswerResponse
-import com.darknessopirate.appvsurveyapi.domain.service.QuestionService
-import com.darknessopirate.appvsurveyapi.domain.service.SubmittedSurveyService
+import com.darknessopirate.appvsurveyapi.domain.service.IQuestionService
+import com.darknessopirate.appvsurveyapi.domain.service.ISubmittedSurveyService
 import com.darknessopirate.appvsurveyapi.infrastructure.mappers.SubmittedSurveyMapper
 import com.darknessopirate.appvsurveyapi.infrastructure.mappers.UserAnswerMapper
 import org.springframework.format.annotation.DateTimeFormat
@@ -15,8 +15,8 @@ import java.time.LocalDateTime
 @RestController
 @RequestMapping("/api/submissions")
 class SubmittedSurveyController(
-    private val submittedSurveyService: SubmittedSurveyService,
-    private val questionService: QuestionService,
+    private val submittedSurveyService: ISubmittedSurveyService,
+    private val questionService: IQuestionService,
     private val submittedSurveyMapper: SubmittedSurveyMapper,
     private val userAnswerMapper: UserAnswerMapper
 ) {

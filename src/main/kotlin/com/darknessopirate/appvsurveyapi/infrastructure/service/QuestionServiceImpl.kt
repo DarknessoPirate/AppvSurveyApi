@@ -4,24 +4,18 @@ import com.darknessopirate.appvsurveyapi.domain.exception.ResourceNotFoundExcept
 import com.darknessopirate.appvsurveyapi.domain.model.Question
 import com.darknessopirate.appvsurveyapi.domain.model.QuestionAnswer
 import com.darknessopirate.appvsurveyapi.domain.repository.QuestionRepository
-import com.darknessopirate.appvsurveyapi.domain.service.QuestionService
+import com.darknessopirate.appvsurveyapi.domain.service.IQuestionService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
 class QuestionServiceImpl(
     private val questionRepository: QuestionRepository
-) : QuestionService {
+) : IQuestionService {
 
     @Transactional
     override fun createQuestion(question: Question): Question {
         return questionRepository.save(question)
-    }
-
-    override fun getQuestionById(id: Long): Question {
-        return questionRepository.findByIdWithAnswers(id).orElseThrow {
-            ResourceNotFoundException("Question not found with id: $id")
-        }
     }
 
     @Transactional
@@ -37,9 +31,9 @@ class QuestionServiceImpl(
         question.possibleAnswers.forEach { answer ->
             existingQuestion.addPossibleAnswer(
                 QuestionAnswer(
-                text = answer.text,
-                displayOrder = answer.displayOrder
-            )
+                    text = answer.text,
+                    displayOrder = answer.displayOrder
+                )
             )
         }
 
@@ -50,6 +44,20 @@ class QuestionServiceImpl(
     override fun deleteQuestion(id: Long) {
         val question = getQuestionById(id)
         questionRepository.delete(question)
+    }
+
+    override fun getQuestionById(id: Long): Question {
+        val question = questionRepository.findByIdWithAnswers(id)
+
+        if(question == null)
+            throw ResourceNotFoundException("Question not found with id: $id")
+
+        return question
+    }
+
+    @Transactional(readOnly = true)
+    override fun getAllQuestions(): List<Question> {
+        return questionRepository.findAllWithPossibleAnswers()
     }
 
     @Transactional(readOnly = true)
@@ -63,9 +71,6 @@ class QuestionServiceImpl(
     }
 
 
-    @Transactional(readOnly = true)
-    override fun getAllQuestions(): List<Question> {
-        return questionRepository.findAllWithPossibleAnswers()
-    }
+
 
 }

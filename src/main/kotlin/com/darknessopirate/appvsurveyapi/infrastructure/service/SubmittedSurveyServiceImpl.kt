@@ -6,7 +6,7 @@ import com.darknessopirate.appvsurveyapi.domain.model.UserAnswer
 import com.darknessopirate.appvsurveyapi.domain.repository.SubmittedSurveyRepository
 import com.darknessopirate.appvsurveyapi.domain.repository.SurveyRepository
 import com.darknessopirate.appvsurveyapi.domain.repository.UserAnswerRepository
-import com.darknessopirate.appvsurveyapi.domain.service.SubmittedSurveyService
+import com.darknessopirate.appvsurveyapi.domain.service.ISubmittedSurveyService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -16,7 +16,7 @@ class SubmittedSurveyServiceImpl(
     private val submittedSurveyRepository: SubmittedSurveyRepository,
     private val surveyRepository: SurveyRepository,
     private val userAnswerRepository: UserAnswerRepository
-) : SubmittedSurveyService {
+) : ISubmittedSurveyService {
 
     @Transactional
     override fun createSubmission(surveyId: Long, userAnswers: List<UserAnswer>): SubmittedSurvey {
