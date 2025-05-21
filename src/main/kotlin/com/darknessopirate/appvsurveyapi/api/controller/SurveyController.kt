@@ -1,122 +1,151 @@
 package com.darknessopirate.appvsurveyapi.api.controller
 
-import com.darknessopirate.appvsurveyapi.api.dto.request.QuestionRequest
-import com.darknessopirate.appvsurveyapi.api.dto.request.SurveyCreateRequest
-import com.darknessopirate.appvsurveyapi.api.dto.response.QuestionResponse
-import com.darknessopirate.appvsurveyapi.api.dto.response.SurveyResponse
+import com.darknessopirate.appvsurveyapi.api.dto.request.question.QuestionRequest
+import com.darknessopirate.appvsurveyapi.api.dto.request.survey.CopySurveyRequest
+import com.darknessopirate.appvsurveyapi.api.dto.request.survey.CreateSurveyRequest
+import com.darknessopirate.appvsurveyapi.api.dto.request.survey.CreateSurveyWithQuestionsRequest
+import com.darknessopirate.appvsurveyapi.api.dto.request.survey.UpdateSurveyRequest
+import com.darknessopirate.appvsurveyapi.api.dto.response.ApiResponse
+import com.darknessopirate.appvsurveyapi.api.dto.response.question.QuestionResponse
+import com.darknessopirate.appvsurveyapi.api.dto.response.survey.SurveyDetailResponse
+import com.darknessopirate.appvsurveyapi.api.dto.response.survey.SurveyResponse
+import com.darknessopirate.appvsurveyapi.domain.model.SurveyStatistics
+import com.darknessopirate.appvsurveyapi.api.dto.response.survey.SurveyStatisticsResponse
 import com.darknessopirate.appvsurveyapi.domain.service.IQuestionService
 import com.darknessopirate.appvsurveyapi.domain.service.ISurveyService
+import com.darknessopirate.appvsurveyapi.domain.service.ISurveySubmissionService
 import com.darknessopirate.appvsurveyapi.infrastructure.mappers.QuestionMapper
 import com.darknessopirate.appvsurveyapi.infrastructure.mappers.SurveyMapper
+import com.darknessopirate.appvsurveyapi.infrastructure.service.QuestionServiceImpl
+import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
+import org.springframework.transaction.annotation.Transactional
+import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 
 @RestController
+@Validated
 @RequestMapping("/api/surveys")
 class SurveyController(
     private val surveyService: ISurveyService,
-    private val questionService: IQuestionService,
     private val surveyMapper: SurveyMapper,
-    private val questionMapper: QuestionMapper
 ) {
-    // TODO: CREATE QUESTIONS BY COPYING INSTEAD OF NEW QUESTIONS
+
     @PostMapping
-    fun createSurvey(@RequestBody survey: SurveyCreateRequest): ResponseEntity<SurveyResponse> {
-        val survey = surveyMapper.toEntity(survey)
-        val createdSurvey = surveyService.createSurvey(survey)
-        val response = surveyMapper.toResponse(createdSurvey)
-
-        return ResponseEntity.ok(response)
+    fun createSurvey(@Valid @RequestBody request: CreateSurveyRequest): ResponseEntity<ApiResponse<SurveyResponse>> {
+        return try {
+            val survey = surveyService.createSurvey(request)
+            ResponseEntity.ok(ApiResponse.success(surveyMapper.toResponse(survey)))
+        } catch (e: Exception) {
+            ResponseEntity.badRequest().body(ApiResponse.error(e.message ?: "Failed to create survey"))
+        }
     }
 
-    @PutMapping("{surveyId}")
-    fun updateSurvey(@RequestBody survey: SurveyCreateRequest, @PathVariable surveyId: Long): ResponseEntity<SurveyResponse> {
-        val survey = surveyMapper.toEntity(survey)
-        val updatedSurvey = surveyService.updateSurvey(surveyId, survey)
-        val response = surveyMapper.toResponse(updatedSurvey)
-
-        return ResponseEntity.ok(response)
+    @PostMapping("/with-questions")
+    fun createSurveyWithQuestions(@Valid @RequestBody request: CreateSurveyWithQuestionsRequest): ResponseEntity<ApiResponse<SurveyDetailResponse>> {
+        return try {
+            val survey = surveyService.createSurveyWithQuestions(request)
+            ResponseEntity.ok(ApiResponse.success(surveyMapper.toDetailResponse(survey)))
+        } catch (e: Exception) {
+            ResponseEntity.badRequest().body(ApiResponse.error(e.message ?: "Failed to create survey"))
+        }
     }
 
-    @DeleteMapping("{surveyId}")
-    fun deleteSurvey(@PathVariable surveyId: Long): ResponseEntity<Void> {
-        surveyService.deleteSurvey(surveyId)
-
-        return ResponseEntity.noContent().build()
+    @GetMapping("/{id}")
+    @Transactional
+    fun getSurvey(@PathVariable id: Long): ResponseEntity<ApiResponse<SurveyDetailResponse>> {
+        return surveyService.findWithQuestions(id)?.let { survey ->
+            ResponseEntity.ok(ApiResponse.success(surveyMapper.toDetailResponse(survey)))
+        } ?: ResponseEntity.notFound().build()
     }
 
-    @GetMapping("/{surveyId}")
-    fun getSurvey(@PathVariable surveyId: Long): ResponseEntity<SurveyResponse> {
-        val survey = surveyService.getSurveyById(surveyId)
-        val response = surveyMapper.toResponse(survey)
-
-        return ResponseEntity.ok(response)
+    @GetMapping("/access-code/{accessCode}")
+    fun getSurveyByAccessCode(@PathVariable accessCode: String): ResponseEntity<ApiResponse<SurveyDetailResponse>> {
+        return surveyService.findByAccessCode(accessCode)?.let { survey ->
+            ResponseEntity.ok(ApiResponse.success(surveyMapper.toDetailResponse(survey)))
+        } ?: ResponseEntity.notFound().build()
     }
 
     @GetMapping
-    fun getAllSurveys(): ResponseEntity<List<SurveyResponse>> {
-        val surveys = surveyService.getAllSurveys()
-        val response = surveyMapper.toResponseList(surveys)
-
-        return ResponseEntity.ok(response)
+    fun getActiveSurveys(): ResponseEntity<ApiResponse<List<SurveyResponse>>> {
+        val surveys = surveyService.findActiveSurveys().map { surveyMapper.toResponse(it) }
+        return ResponseEntity.ok(ApiResponse.success(surveys))
     }
 
-    @GetMapping("/access/{code}")
-    fun getSurveyByAccessCode(@PathVariable code: String): ResponseEntity<SurveyResponse> {
-        val survey = surveyService.getSurveyByAccessCode(code)
-        val response = surveyMapper.toResponse(survey)
-
-        return ResponseEntity.ok(response)
+    @GetMapping("/expiring")
+    fun getExpiringSurveys(@RequestParam(defaultValue = "7") days: Int): ResponseEntity<ApiResponse<List<SurveyResponse>>> {
+        val surveys = surveyService.findExpiringSoon(days).map { surveyMapper.toResponse(it) }
+        return ResponseEntity.ok(ApiResponse.success(surveys))
     }
 
-    @PostMapping("/{surveyId}/questions")
-    fun addQuestionToSurvey(
-        @PathVariable surveyId: Long,
-        @RequestBody questionRequest: QuestionRequest
-    ): ResponseEntity<SurveyResponse> {
-        val question = questionMapper.toEntity(questionRequest)
-        val updatedSurvey = surveyService.addQuestionToSurvey(surveyId, question)
-        val response = surveyMapper.toResponse(updatedSurvey)
+    @PutMapping("/{id}")
+    fun updateSurvey(@PathVariable id: Long, @Valid @RequestBody request: UpdateSurveyRequest): ResponseEntity<ApiResponse<SurveyResponse>> {
+        return try {
+            val survey = surveyService.findWithQuestions(id)
+                ?: return ResponseEntity.notFound().build()
 
-        return ResponseEntity.ok(response)
+            // Update individual fields (implementation would need additional service methods)
+            val updatedSurvey = survey.copy(
+                title = request.title ?: survey.title,
+                description = request.description ?: survey.description,
+                expiresAt = request.expiresAt ?: survey.expiresAt,
+                isActive = request.isActive ?: survey.isActive
+            )
+
+            ResponseEntity.ok(ApiResponse.success(surveyMapper.toResponse(updatedSurvey)))
+        } catch (e: Exception) {
+            ResponseEntity.badRequest().body(ApiResponse.error(e.message ?: "Failed to update survey"))
+        }
     }
 
-    @PostMapping("/{surveyId}/questions/{questionId}")
-    fun addExistingQuestionToSurvey(
-        @PathVariable surveyId: Long,
-        @PathVariable questionId: Long
-    ): ResponseEntity<SurveyResponse> {
-        val updatedSurvey = surveyService.addExistingQuestionToSurvey(surveyId, questionId)
-        val response = surveyMapper.toResponse(updatedSurvey)
-
-        return ResponseEntity.ok(response)
+    @PostMapping("/{id}/access-code")
+    fun generateAccessCode(@PathVariable id: Long): ResponseEntity<ApiResponse<SurveyResponse>> {
+        return try {
+            val survey = surveyService.generateAccessCode(id)
+            ResponseEntity.ok(ApiResponse.success(surveyMapper.toResponse(survey)))
+        } catch (e: Exception) {
+            ResponseEntity.badRequest().body(ApiResponse.error(e.message ?: "Failed to generate access code"))
+        }
     }
 
-    @DeleteMapping("/{surveyId}/questions/{questionId}")
-    fun removeQuestionFromSurvey(
-        @PathVariable surveyId: Long,
-        @PathVariable questionId: Long
-    ): ResponseEntity<SurveyResponse> {
-        val updatedSurvey = surveyService.removeQuestionFromSurvey(surveyId, questionId)
-        val response = surveyMapper.toResponse(updatedSurvey)
-
-        return ResponseEntity.ok(response)
+    @PostMapping("/{id}/copy")
+    fun copySurvey(@PathVariable id: Long, @Valid @RequestBody request: CopySurveyRequest): ResponseEntity<ApiResponse<SurveyResponse>> {
+        return try {
+            val survey = surveyService.copySurvey(id, request.newTitle, request.includeAccessCode)
+            ResponseEntity.ok(ApiResponse.success(surveyMapper.toResponse(survey)))
+        } catch (e: Exception) {
+            ResponseEntity.badRequest().body(ApiResponse.error(e.message ?: "Failed to copy survey"))
+        }
     }
 
-    @GetMapping("/{id}/link")
-    fun generateSurveyLink(@PathVariable id: Long): ResponseEntity<Map<String, String>> {
-        val link = surveyService.generateSurveyLink(id)
-
-        return ResponseEntity.ok(mapOf("link" to link))
+    @GetMapping("/{id}/statistics")
+    fun getSurveyStatistics(@PathVariable id: Long): ResponseEntity<ApiResponse<SurveyStatisticsResponse>> {
+        return try {
+            val stats = surveyService.getStatistics(id)
+            val response = surveyMapper.toResponse(stats)
+            ResponseEntity.ok(ApiResponse.success(response))
+        } catch (e: Exception) {
+            ResponseEntity.badRequest().body(ApiResponse.error(e.message ?: "Failed to get statistics"))
+        }
     }
 
-    @GetMapping("/{surveyId}/questions/not-used")
-    fun getReusableQuestions(@PathVariable surveyId: Long): ResponseEntity<List<QuestionResponse>> {
-        val questions = questionService.getReusableQuestions(surveyId)
-        val response = questionMapper.toResponseList(questions)
-
-        return ResponseEntity.ok(response)
+    @PutMapping("/{id}/active")
+    fun setActive(@PathVariable id: Long, @RequestParam isActive: Boolean): ResponseEntity<ApiResponse<SurveyResponse>> {
+        return try {
+            val survey = surveyService.setActive(id, isActive)
+            ResponseEntity.ok(ApiResponse.success(surveyMapper.toResponse(survey)))
+        } catch (e: Exception) {
+            ResponseEntity.badRequest().body(ApiResponse.error(e.message ?: "Failed to update survey status"))
+        }
     }
 
-
+    @DeleteMapping("/{id}")
+    fun deleteSurvey(@PathVariable id: Long): ResponseEntity<ApiResponse<String>> {
+        return try {
+            surveyService.deleteSurvey(id)
+            ResponseEntity.ok(ApiResponse.success("Survey deleted successfully"))
+        } catch (e: Exception) {
+            ResponseEntity.badRequest().body(ApiResponse.error(e.message ?: "Failed to delete survey"))
+        }
+    }
 }

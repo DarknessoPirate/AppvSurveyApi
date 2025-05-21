@@ -7,7 +7,7 @@ spring:
     jpa:
         database-platform: org.hibernate.dialect.PostgreSQLDialect
         hibernate:
-            ddl-auto: update  # Keep this as update to preserve data between restarts
+            ddl-auto: create  # Keep this as update to preserve data between restarts
         properties:
             hibernate:
                 format_sql: true
@@ -19,11 +19,6 @@ spring:
         # allow data.sql to run after tables are created/updated
         defer-datasource-initialization: true
 
-    sql:
-        init:
-            mode: always  # Options: always, never, embedded
-            # If you want to use a custom named file instead of data.sql:
-            # data-locations: classpath:test-data.sql
 
 # Logging configuration (keep as is)
 logging:
