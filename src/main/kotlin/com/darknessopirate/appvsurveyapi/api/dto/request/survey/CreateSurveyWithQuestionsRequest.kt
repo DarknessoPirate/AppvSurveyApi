@@ -7,6 +7,5 @@ data class CreateSurveyWithQuestionsRequest(
     val title: String,
     val description: String? = null,
     val expiresAt: LocalDateTime? = null,
-    val accessCode: String? = null,
     val questions: List<QuestionRequest>
 )

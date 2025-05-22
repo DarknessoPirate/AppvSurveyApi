@@ -15,26 +15,27 @@ interface ISurveyService {
     /**
      * Create a new survey
      */
-    fun createSurvey(
-        request: CreateSurveyRequest
-    ): Survey
+    fun createSurvey(request: CreateSurveyRequest): Survey
 
     /**
      * Create survey with questions
      */
-    fun createSurveyWithQuestions(
-        request: CreateSurveyWithQuestionsRequest
-    ): Survey
+    fun createSurveyWithQuestions(request: CreateSurveyWithQuestionsRequest): Survey
+
+    /**
+     * Update the survey with new data
+     */
+    fun updateSurvey(id: Long, survey: CreateSurveyRequest): Survey
 
     /**
      * Find survey by access code
      */
-    fun findByAccessCode(accessCode: String): Survey?
+    fun findByAccessCode(accessCode: String): Survey
 
     /**
      * Find survey with all questions and answers
      */
-    fun findWithQuestions(surveyId: Long): Survey?
+    fun findWithQuestions(surveyId: Long): Survey
 
     /**
      * Add question to survey by copying from shared questions
@@ -84,7 +85,7 @@ interface ISurveyService {
     /**
      * Generate unique access code
      */
-    fun generateAccessCode(surveyId: Long): Survey
+    fun generateAccessCode(surveyId: Long): String
 
     /**
      * Copy survey (with all questions)

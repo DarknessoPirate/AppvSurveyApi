@@ -7,15 +7,19 @@ import com.darknessopirate.appvsurveyapi.domain.entity.question.ClosedQuestion
 import com.darknessopirate.appvsurveyapi.domain.entity.question.OpenQuestion
 import com.darknessopirate.appvsurveyapi.domain.entity.question.Question
 import com.darknessopirate.appvsurveyapi.domain.entity.survey.Survey
+import com.darknessopirate.appvsurveyapi.domain.exception.AccessCodeGenerationException
+import com.darknessopirate.appvsurveyapi.domain.exception.InvalidOperationException
 import com.darknessopirate.appvsurveyapi.domain.model.SurveyStatistics
 import com.darknessopirate.appvsurveyapi.domain.repository.survey.SubmittedSurveyRepository
 import com.darknessopirate.appvsurveyapi.domain.repository.survey.SurveyRepository
 import com.darknessopirate.appvsurveyapi.domain.service.ISurveyService
 import com.darknessopirate.appvsurveyapi.infrastructure.mappers.SurveyMapper
 import jakarta.persistence.EntityNotFoundException
+import org.hibernate.Hibernate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
+import java.util.UUID
 
 @Service
 @Transactional
@@ -54,20 +58,61 @@ class SurveyServiceImpl(
         return surveyRepository.save(survey)
     }
 
+    override fun updateSurvey(id: Long, request: CreateSurveyRequest): Survey {
+        val survey = surveyRepository.findByIdWithQuestions(id)
+
+        if(survey == null)
+            throw EntityNotFoundException("Survey not found with id: $id")
+
+        survey.title = request.title
+        survey.description = request.description ?: survey.description
+        survey.expiresAt = request.expiresAt ?: survey.expiresAt
+
+        return surveyRepository.save(survey)
+    }
+
+
     /**
      * Find survey by access code
      */
-    override fun findByAccessCode(accessCode: String): Survey? {
-        return surveyRepository.findByAccessCodeWithQuestions(accessCode)
+    override fun findByAccessCode(accessCode: String): Survey {
+        val survey = surveyRepository.findByAccessCodeWithQuestions(accessCode)
+        if(survey == null)
+            throw EntityNotFoundException("Survey with this access code does not exist")
+
+        // Initialize the lazy loaded answers so that controller doesnt have to be transactional
+        survey.questions.forEach { question ->
+            if (question is ClosedQuestion) {
+                Hibernate.initialize(question.possibleAnswers)
+            }
+        }
+
+        return survey
     }
 
     /**
      * Find survey with all questions and answers
      */
-    override fun findWithQuestions(surveyId: Long): Survey? {
-        return surveyRepository.findByIdWithQuestions(surveyId)
+    override fun findWithQuestions(surveyId: Long): Survey {
+        val survey = surveyRepository.findByIdWithQuestions(surveyId)
+
+        if(survey == null)
+            throw EntityNotFoundException("Survey with this ID does not exist")
+
+        survey.questions.forEach { question -> if(question is ClosedQuestion){
+            Hibernate.initialize(question.possibleAnswers)
+        }
+        }
+
+        return survey
     }
 
+
+    // TODO: ADD FIND ALL SURVEYS ( ACTIVE + INACTIVE)
+    // TODO: ADD FIND ALL INACTIVE
+    // TODO: CHANGE DEFAULT FROM ACTIVE TO NOT ACTIVE
+    // TODO: CHANGE COPYING LOGIC
+    // TODO: CHANGE ACCESS CODE COPYING LOGIC (CURRENTLY DUPLICATE KEY EXCEPTION - JUST GENERATE NEW)
     /**
      * Add question to survey by copying from shared questions
      */
@@ -128,7 +173,9 @@ class SurveyServiceImpl(
      */
     override fun reorderQuestions(surveyId: Long, questionIds: List<Long>?) {
         val survey = surveyRepository.findByIdWithQuestions(surveyId)
-            ?: throw EntityNotFoundException("Survey not found: $surveyId")
+
+        if (survey == null)
+            throw EntityNotFoundException("Survey not found with id : $surveyId")
 
         if (questionIds != null) {
             // Reorder according to provided list
@@ -170,18 +217,21 @@ class SurveyServiceImpl(
     /**
      * Generate unique access code
      */
-    override fun generateAccessCode(surveyId: Long): Survey {
+    override fun generateAccessCode(surveyId: Long): String {
         val survey = surveyRepository.findById(surveyId).orElseThrow {
-            EntityNotFoundException("Survey not found: $surveyId")
+            EntityNotFoundException("Survey not found with id : $surveyId")
         }
 
-        var accessCode: String
-        do {
-            accessCode = generateRandomCode()
-        } while (surveyRepository.findByAccessCodeWithQuestions(accessCode) != null)
+        if(survey.accessCode != null)
+            return survey.accessCode!!
 
-        survey.accessCode = accessCode
-        return surveyRepository.save(survey)
+        survey.accessCode = UUID.randomUUID().toString()
+        surveyRepository.save(survey)
+        val accessCode = survey.accessCode
+        if(accessCode == null || accessCode.isEmpty())
+            throw AccessCodeGenerationException("Failed to generate access code")
+
+        return accessCode
     }
 
     /**
@@ -236,7 +286,7 @@ class SurveyServiceImpl(
      * Find active surveys
      */
     override fun findActiveSurveys(): List<Survey> {
-        return surveyRepository.findByIsActiveOrderByCreatedAtDesc(true)
+        return surveyRepository.findActiveWithQuestions()
     }
 
     /**
@@ -267,7 +317,7 @@ class SurveyServiceImpl(
         // Check if survey has submissions
         val submissions = submittedSurveyRepository.findBySurveyId(surveyId)
         if (submissions.isNotEmpty()) {
-            throw IllegalStateException("Cannot delete survey with existing submissions")
+            throw InvalidOperationException("Cannot delete survey with existing submissions")
         }
 
         surveyRepository.deleteById(surveyId)
@@ -280,10 +330,4 @@ class SurveyServiceImpl(
         return survey.questions.maxOfOrNull { it.displayOrder } ?: 0
     }
 
-    private fun generateRandomCode(length: Int = 8): String {
-        val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-        return (1..length)
-            .map { chars.random() }
-            .joinToString("")
-    }
 }

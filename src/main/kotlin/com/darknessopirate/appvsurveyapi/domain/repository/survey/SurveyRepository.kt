@@ -18,8 +18,8 @@ interface SurveyRepository : JpaRepository<Survey, Long> {
     @Query("SELECT DISTINCT s FROM Survey s LEFT JOIN FETCH s.questions WHERE s.id = :id")
     fun findByIdWithQuestions(@Param("id") id: Long): Survey?
 
-    // Find surveys by active status
-    fun findByIsActiveOrderByCreatedAtDesc(isActive: Boolean): List<Survey>
+    @Query("SELECT DISTINCT s FROM Survey s LEFT JOIN FETCH s.questions WHERE s.isActive = true ORDER BY s.createdAt DESC")
+    fun findActiveWithQuestions(): List<Survey>
 
     // Find surveys expiring soon
     @Query("SELECT s FROM Survey s WHERE s.expiresAt IS NOT NULL AND s.expiresAt BETWEEN :startDate AND :endDate")

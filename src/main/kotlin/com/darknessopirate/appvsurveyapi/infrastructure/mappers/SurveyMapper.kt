@@ -22,7 +22,6 @@ class SurveyMapper(private val questionMapper: QuestionMapper) {
             title = request.title,
             description = request.description,
             expiresAt = request.expiresAt ,
-            accessCode = request.accessCode
         )
 
     }
@@ -33,7 +32,6 @@ class SurveyMapper(private val questionMapper: QuestionMapper) {
             title = request.title,
             description = request.description,
             expiresAt = request.expiresAt ,
-            accessCode = request.accessCode
         )
         val questions = questionMapper.toEntity(request.questions)
         return Pair(surveyEntity, questions)

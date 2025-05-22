@@ -1,7 +1,9 @@
 package com.darknessopirate.appvsurveyapi.api.exception
 
+import com.darknessopirate.appvsurveyapi.domain.exception.InvalidOperationException
 import com.darknessopirate.appvsurveyapi.domain.exception.ResourceNotFoundException
 import com.darknessopirate.appvsurveyapi.domain.exception.ValidationException
+import jakarta.persistence.EntityNotFoundException
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -18,7 +20,17 @@ class GlobalExceptionHandler {
     fun handleResourceNotFoundException(ex: ResourceNotFoundException): ResponseEntity<ErrorResponse> {
         val errorResponse = ErrorResponse(
             status = HttpStatus.NOT_FOUND.value(),
-            message = ex.message ?: "Resource not found",
+            message = ex.message ?: "Resource with given id not found",
+            timestamp = System.currentTimeMillis()
+        )
+        return ResponseEntity(errorResponse, HttpStatus.NOT_FOUND)
+    }
+
+    @ExceptionHandler(EntityNotFoundException::class)
+    fun handleEntityNotFoundException(ex: ResourceNotFoundException): ResponseEntity<ErrorResponse> {
+        val errorResponse = ErrorResponse(
+            status = HttpStatus.NOT_FOUND.value(),
+            message = ex.message ?: "Resource with given id not found",
             timestamp = System.currentTimeMillis()
         )
         return ResponseEntity(errorResponse, HttpStatus.NOT_FOUND)
@@ -34,11 +46,21 @@ class GlobalExceptionHandler {
         return ResponseEntity(errorResponse, HttpStatus.BAD_REQUEST)
     }
 */
+    @ExceptionHandler(InvalidOperationException::class)
+    fun handleInvalidOperationException(ex: MethodArgumentNotValidException): ResponseEntity<ErrorResponse> {
+        val errorResponse = ErrorResponse(
+            status = HttpStatus.BAD_REQUEST.value(),
+            message = ex.message ,
+            timestamp = System.currentTimeMillis()
+        )
+        return ResponseEntity(errorResponse, HttpStatus.BAD_REQUEST)
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException::class)
     fun handleValidationException(ex: MethodArgumentNotValidException): ResponseEntity<ErrorResponse> {
         val errorResponse = ErrorResponse(
             status = HttpStatus.BAD_REQUEST.value(),
-            message = ex.message ?: "Validation error",
+            message = ex.message ,
             timestamp = System.currentTimeMillis()
         )
         return ResponseEntity(errorResponse, HttpStatus.BAD_REQUEST)

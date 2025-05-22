@@ -14,7 +14,7 @@ import com.darknessopirate.appvsurveyapi.domain.entity.question.QuestionAnswer
 import org.springframework.stereotype.Component
 
 @Component
-class QuestionMapper {
+class   QuestionMapper {
     fun toEntity(request: List<QuestionRequest>): List<Question> {
         return request.map { toEntity(it) }
     }

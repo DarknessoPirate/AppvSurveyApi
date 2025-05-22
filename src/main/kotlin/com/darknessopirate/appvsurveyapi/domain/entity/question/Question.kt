@@ -5,7 +5,6 @@ import com.darknessopirate.appvsurveyapi.domain.entity.survey.Survey
 import com.darknessopirate.appvsurveyapi.domain.entity.answer.UserAnswer
 import jakarta.persistence.*
 
-// TODO: TRY TO ADD A FLAG isShared to indicate whether question can be reused(only by copying, no relations)
 @Entity
 @Table(name = "questions")
 @Inheritance(strategy = InheritanceType.JOINED)

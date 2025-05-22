@@ -10,6 +10,7 @@ import com.darknessopirate.appvsurveyapi.domain.repository.question.QuestionRepo
 import com.darknessopirate.appvsurveyapi.domain.repository.survey.SurveyRepository
 import com.darknessopirate.appvsurveyapi.domain.service.IQuestionService
 import jakarta.persistence.EntityNotFoundException
+import org.hibernate.Hibernate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -92,7 +93,14 @@ class QuestionServiceImpl(
      * Find all shared questions available for copying
      */
     override fun findSharedQuestions(): List<Question> {
-        return questionRepository.findShared()
+        val questions = questionRepository.findShared()
+        questions.forEach { question ->
+            if (question is ClosedQuestion) {
+                Hibernate.initialize(question.possibleAnswers)
+            }
+        }
+
+        return questions
     }
 
     /**
