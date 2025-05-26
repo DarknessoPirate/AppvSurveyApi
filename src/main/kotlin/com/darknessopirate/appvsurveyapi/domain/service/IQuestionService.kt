@@ -1,5 +1,8 @@
 package com.darknessopirate.appvsurveyapi.domain.service
 
+import com.darknessopirate.appvsurveyapi.api.dto.request.question.ClosedQuestionRequest
+import com.darknessopirate.appvsurveyapi.api.dto.request.question.OpenQuestionRequest
+import com.darknessopirate.appvsurveyapi.api.dto.request.question.QuestionRequest
 import com.darknessopirate.appvsurveyapi.domain.entity.question.ClosedQuestion
 import com.darknessopirate.appvsurveyapi.domain.entity.question.OpenQuestion
 import com.darknessopirate.appvsurveyapi.domain.enums.QuestionType
@@ -10,21 +13,21 @@ interface IQuestionService {
     /**
      * Create a shared question (manually created, available for copying)
      */
-    fun createSharedOpenQuestion(text: String, required: Boolean = false): OpenQuestion
+    fun createSharedOpenQuestion(request: OpenQuestionRequest): OpenQuestion
 
     /**
      * Create a shared closed question with possible answers
      */
-    fun createSharedClosedQuestion(
-        text: String,
-        required: Boolean = false,
-        selectionType: SelectionType,
-        possibleAnswers: List<String>
-    ): ClosedQuestion
-
+    fun createSharedClosedQuestion(request: ClosedQuestionRequest): ClosedQuestion
     /**
      * Copy a shared question to a survey
      */
+
+    /**
+     * Add question to survey (handles both open and closed questions)
+     */
+    fun addQuestionToSurvey(surveyId: Long, request: QuestionRequest): Question
+
     fun copyQuestionToSurvey(questionId: Long, surveyId: Long, displayOrder: Int): Question
 
     /**
@@ -42,6 +45,7 @@ interface IQuestionService {
      */
     fun findSharedClosedQuestionsWithAnswers(): List<ClosedQuestion>
 
+    fun findSharedOpenQuestionsWithAnswers(): List<OpenQuestion>
     /**
      * Create survey-specific question directly (not shared)
      */

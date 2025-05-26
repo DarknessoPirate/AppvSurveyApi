@@ -196,9 +196,11 @@ class SurveyServiceImpl(
      * Activate/deactivate survey
      */
     override fun setActive(surveyId: Long, isActive: Boolean): Survey {
-        val survey = surveyRepository.findById(surveyId).orElseThrow {
-            EntityNotFoundException("Survey not found: $surveyId")
-        }
+        val survey = surveyRepository.findByIdWithQuestions(surveyId)
+
+        if(survey == null)
+            throw EntityNotFoundException("Survey not found with id : $surveyId")
+
         survey.isActive = isActive
         return surveyRepository.save(survey)
     }
@@ -269,13 +271,25 @@ class SurveyServiceImpl(
         val submissions = submittedSurveyRepository.findBySurveyId(surveyId)
         val questionCount = surveyRepository.countQuestionsByType(surveyId)
 
+        // Map ugly class names to readable question types
+        val readableQuestionCounts = questionCount.associate { row ->
+            val className = row[0].toString()
+            val count = (row[1] as Long).toInt()
+
+            val readableType = when {
+                className.contains("OpenQuestion") -> "OPEN"
+                className.contains("ClosedQuestion") -> "CLOSED"
+                else -> className.substringAfterLast(".") // fallback to just class name
+            }
+
+            readableType to count
+        }
+
         return SurveyStatistics(
             surveyId = surveyId,
             title = survey.title,
             totalSubmissions = submissions.size,
-            questionCounts = questionCount.associate {
-                it[0].toString() to (it[1] as Long).toInt()
-            },
+            questionCounts = readableQuestionCounts,
             isActive = survey.isActive,
             expiresAt = survey.expiresAt,
             createdAt = survey.createdAt

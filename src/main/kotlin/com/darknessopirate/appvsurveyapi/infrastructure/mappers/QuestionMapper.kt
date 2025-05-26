@@ -39,14 +39,14 @@ class   QuestionMapper {
 
     fun toResponse(entity: Question): QuestionResponse = when (entity) {
         is OpenQuestion -> OpenQuestionResponse(
-            questionId = entity.id!!,
+            questionId = entity.id ?: throw IllegalStateException("Question ID is null - entity may not be persisted yet"),
             questionText = entity.text,
             isRequired = entity.required,
             order = entity.displayOrder,
             shared = entity.isShared
         )
         is ClosedQuestion -> ClosedQuestionResponse(
-            questionId = entity.id!!,
+            questionId = entity.id ?: throw IllegalStateException("Question ID is null - entity may not be persisted yet"),
             questionText = entity.text,
             isRequired = entity.required,
             order = entity.displayOrder,
@@ -58,7 +58,7 @@ class   QuestionMapper {
     }
 
     fun toResponse(entity: QuestionAnswer): QuestionAnswerResponse = QuestionAnswerResponse(
-        id = entity.id!!,
+        id = entity.id ?: throw IllegalStateException("QuestionAnswer ID is null - entity may not be persisted yet"),
         text = entity.text,
         displayOrder = entity.displayOrder
     )

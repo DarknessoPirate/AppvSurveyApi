@@ -1,4 +1,7 @@
 package com.darknessopirate.appvsurveyapi.infrastructure.service
+import com.darknessopirate.appvsurveyapi.api.dto.request.question.ClosedQuestionRequest
+import com.darknessopirate.appvsurveyapi.api.dto.request.question.OpenQuestionRequest
+import com.darknessopirate.appvsurveyapi.api.dto.request.question.QuestionRequest
 import com.darknessopirate.appvsurveyapi.domain.enums.SelectionType
 import com.darknessopirate.appvsurveyapi.domain.entity.question.ClosedQuestion
 import com.darknessopirate.appvsurveyapi.domain.entity.question.OpenQuestion
@@ -9,6 +12,7 @@ import com.darknessopirate.appvsurveyapi.domain.repository.question.OpenQuestion
 import com.darknessopirate.appvsurveyapi.domain.repository.question.QuestionRepository
 import com.darknessopirate.appvsurveyapi.domain.repository.survey.SurveyRepository
 import com.darknessopirate.appvsurveyapi.domain.service.IQuestionService
+import com.darknessopirate.appvsurveyapi.infrastructure.mappers.QuestionMapper
 import jakarta.persistence.EntityNotFoundException
 import org.hibernate.Hibernate
 import org.springframework.stereotype.Service
@@ -20,16 +24,17 @@ class QuestionServiceImpl(
     private val questionRepository: QuestionRepository,
     private val openQuestionRepository: OpenQuestionRepository,
     private val closedQuestionRepository: ClosedQuestionRepository,
-    private val surveyRepository: SurveyRepository
+    private val surveyRepository: SurveyRepository,
+    private val questionMapper: QuestionMapper
 ) : IQuestionService {
 
     /**
      * Create a shared question (manually created, available for copying)
      */
-    override fun createSharedOpenQuestion(text: String, required: Boolean): OpenQuestion {
+    override fun createSharedOpenQuestion(request: OpenQuestionRequest): OpenQuestion {
         val question = OpenQuestion(
-            text = text,
-            required = required,
+            text = request.text,
+            required = request.required,
             isShared = true
         )
         return openQuestionRepository.save(question)
@@ -38,20 +43,15 @@ class QuestionServiceImpl(
     /**
      * Create a shared closed question with possible answers
      */
-    override fun createSharedClosedQuestion(
-        text: String,
-        required: Boolean,
-        selectionType: SelectionType,
-        possibleAnswers: List<String>
-    ): ClosedQuestion {
+    override fun createSharedClosedQuestion(request: ClosedQuestionRequest): ClosedQuestion {
         val question = ClosedQuestion(
-            text = text,
-            required = required,
+            text = request.text,
+            required = request.required,
             isShared = true,
-            selectionType = selectionType
+            selectionType = request.selectionType
         )
 
-        possibleAnswers.forEachIndexed { index, answerText ->
+        request.possibleAnswers.forEachIndexed { index, answerText ->
             val answer = QuestionAnswer(
                 text = answerText,
                 displayOrder = index + 1
@@ -60,6 +60,26 @@ class QuestionServiceImpl(
         }
 
         return closedQuestionRepository.save(question)
+    }
+
+    override fun addQuestionToSurvey(surveyId: Long, request: QuestionRequest): Question {
+        val survey = surveyRepository.findById(surveyId).orElseThrow {
+            EntityNotFoundException("Survey not found with id: $surveyId")
+        }
+
+        val maxOrder = survey.questions.maxOfOrNull { it.displayOrder } ?: 0
+        val question = questionMapper.toEntity(request)
+        question.displayOrder = maxOrder + 1
+        question.survey = survey // Set the survey relationship explicitly
+
+        // Save the question directly to ensure it gets an ID
+        val savedQuestion = when (question) {
+            is OpenQuestion -> openQuestionRepository.saveAndFlush(question)
+            is ClosedQuestion -> closedQuestionRepository.saveAndFlush(question)
+            else -> questionRepository.saveAndFlush(question)
+        }
+
+        return savedQuestion
     }
 
     /**
@@ -115,6 +135,10 @@ class QuestionServiceImpl(
      */
     override fun findSharedClosedQuestionsWithAnswers(): List<ClosedQuestion> {
         return closedQuestionRepository.findSharedWithAnswers()
+    }
+
+    override fun findSharedOpenQuestionsWithAnswers(): List<OpenQuestion> {
+        return openQuestionRepository.findShared()
     }
 
     /**

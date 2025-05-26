@@ -58,29 +58,32 @@ class SurveyController(
     fun getSurveyByAccessCode(@PathVariable accessCode: String): ResponseEntity<SurveyDetailResponse> {
         val survey = surveyService.findByAccessCode(accessCode)
         val detailedSurveyResponse = surveyMapper.toDetailResponse(survey)
+
         return ResponseEntity.ok(detailedSurveyResponse)
     }
 
     @GetMapping
     fun getActiveSurveys(): ResponseEntity<List<SurveyResponse>> {
-        val activeSurveys = surveyService.findActiveSurveys().map { surveyMapper.toResponse(it) }
+        val activeSurveys = surveyService.findActiveSurveys()
+        val response = activeSurveys.map { surveyMapper.toResponse(it) }
 
-        return ResponseEntity.ok(activeSurveys)
+        return ResponseEntity.ok(response)
     }
 
     @GetMapping("/expiring")
-    fun getExpiringSurveys(@RequestParam(defaultValue = "7") days: Int): ResponseEntity<ApiResponse<List<SurveyResponse>>> {
-        val surveys = surveyService.findExpiringSoon(days).map { surveyMapper.toResponse(it) }
-        return ResponseEntity.ok(ApiResponse.success(surveys))
+    fun getExpiringSurveys(@RequestParam(defaultValue = "7") days: Int): ResponseEntity<List<SurveyResponse>> {
+        val surveys = surveyService.findExpiringSoon(days)
+        val response = surveys.map { surveyMapper.toResponse(it) }
+
+        return ResponseEntity.ok(response)
     }
 
     @PutMapping("/{id}")
     fun updateSurvey(@PathVariable id: Long, @Valid @RequestBody request: CreateSurveyRequest): ResponseEntity<SurveyResponse> {
         val updatedSurvey = surveyService.updateSurvey(id, request)
         val updatedSurveyResponse = surveyMapper.toResponse(updatedSurvey)
+
         return ResponseEntity.ok(updatedSurveyResponse)
-
-
     }
 
     @PostMapping("/{id}/access-code")
@@ -91,34 +94,27 @@ class SurveyController(
     }
 
     @PostMapping("/{id}/copy")
-    fun copySurvey(@PathVariable id: Long, @Valid @RequestBody request: CopySurveyRequest): ResponseEntity<ApiResponse<SurveyResponse>> {
-        return try {
-            val survey = surveyService.copySurvey(id, request.newTitle, request.includeAccessCode)
-            ResponseEntity.ok(ApiResponse.success(surveyMapper.toResponse(survey)))
-        } catch (e: Exception) {
-            ResponseEntity.badRequest().body(ApiResponse.error(e.message ?: "Failed to copy survey"))
-        }
+    fun copySurvey(@PathVariable id: Long, @Valid @RequestBody request: CopySurveyRequest): ResponseEntity<SurveyResponse> {
+        val survey = surveyService.copySurvey(id, request.newTitle, request.includeAccessCode)
+        val copiedSurveyResponse = surveyMapper.toResponse(survey)
+
+        return ResponseEntity.ok(copiedSurveyResponse)
     }
 
     @GetMapping("/{id}/statistics")
-    fun getSurveyStatistics(@PathVariable id: Long): ResponseEntity<ApiResponse<SurveyStatisticsResponse>> {
-        return try {
-            val stats = surveyService.getStatistics(id)
-            val response = surveyMapper.toResponse(stats)
-            ResponseEntity.ok(ApiResponse.success(response))
-        } catch (e: Exception) {
-            ResponseEntity.badRequest().body(ApiResponse.error(e.message ?: "Failed to get statistics"))
-        }
+    fun getSurveyStatistics(@PathVariable id: Long): ResponseEntity<SurveyStatisticsResponse> {
+        val stats = surveyService.getStatistics(id)
+        val statisticsResponse = surveyMapper.toResponse(stats)
+
+        return ResponseEntity.ok(statisticsResponse)
     }
 
     @PutMapping("/{id}/active")
-    fun setActive(@PathVariable id: Long, @RequestParam isActive: Boolean): ResponseEntity<ApiResponse<SurveyResponse>> {
-        return try {
-            val survey = surveyService.setActive(id, isActive)
-            ResponseEntity.ok(ApiResponse.success(surveyMapper.toResponse(survey)))
-        } catch (e: Exception) {
-            ResponseEntity.badRequest().body(ApiResponse.error(e.message ?: "Failed to update survey status"))
-        }
+    fun setActive(@PathVariable id: Long, @RequestParam isActive: Boolean): ResponseEntity<SurveyResponse> {
+        val survey = surveyService.setActive(id, isActive)
+        val updatedSurveyResponse = surveyMapper.toResponse(survey)
+
+        return ResponseEntity.ok(updatedSurveyResponse)
     }
 
     @DeleteMapping("/{id}")

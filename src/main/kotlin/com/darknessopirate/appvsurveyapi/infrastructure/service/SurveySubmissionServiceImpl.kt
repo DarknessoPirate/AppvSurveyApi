@@ -105,14 +105,14 @@ class SurveySubmissionServiceImpl(
      * Get submission by ID
      */
     override fun getSubmission(submissionId: Long): SubmittedSurvey? {
-        return submittedSurveyRepository.findById(submissionId).orElse(null)
+        return submittedSurveyRepository.findByIdWithSurveyAndAnswers(submissionId)
     }
 
     /**
      * Get all submissions for a survey
      */
     override fun getSubmissions(surveyId: Long): List<SubmittedSurvey> {
-        return submittedSurveyRepository.findBySurveyId(surveyId)
+        return submittedSurveyRepository.findBySurveyIdWithSurvey(surveyId)
     }
 
     /**
@@ -123,7 +123,7 @@ class SurveySubmissionServiceImpl(
         startDate: LocalDateTime,
         endDate: LocalDateTime
     ): List<SubmittedSurvey> {
-        return submittedSurveyRepository.findBySurveyId(surveyId)
+        return submittedSurveyRepository.findBySurveyIdWithSurvey(surveyId)
             .filter { it.submittedAt.isAfter(startDate) && it.submittedAt.isBefore(endDate) }
     }
 

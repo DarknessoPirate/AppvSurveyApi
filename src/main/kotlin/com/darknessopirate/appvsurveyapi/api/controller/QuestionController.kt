@@ -27,100 +27,86 @@ class QuestionController(
 ) {
 
     @PostMapping("/shared/open")
-    fun createSharedOpenQuestion(@Valid @RequestBody request: OpenQuestionRequest): ResponseEntity<ApiResponse<OpenQuestionResponse>> {
-        return try {
-            val question = questionService.createSharedOpenQuestion(request.text, request.required)
-            ResponseEntity.ok(ApiResponse.success(questionMapper.toResponse(question) as OpenQuestionResponse))
-        } catch (e: Exception) {
-            ResponseEntity.badRequest().body(ApiResponse.error(e.message ?: "Failed to create shared question"))
-        }
+    fun createSharedOpenQuestion(@Valid @RequestBody request: OpenQuestionRequest): ResponseEntity<OpenQuestionResponse> {
+        val question = questionService.createSharedOpenQuestion(request)
+        val questionResponse = questionMapper.toResponse(question) as OpenQuestionResponse
+
+        return ResponseEntity.ok(questionResponse)
     }
 
     @PostMapping("/shared/closed")
-    fun createSharedClosedQuestion(@Valid @RequestBody request: ClosedQuestionRequest): ResponseEntity<ApiResponse<ClosedQuestionResponse>> {
-        return try {
-            val question = questionService.createSharedClosedQuestion(
-                text = request.text,
-                required = request.required,
-                selectionType = request.selectionType,
-                possibleAnswers = request.possibleAnswers
-            )
-            ResponseEntity.ok(ApiResponse.success(questionMapper.toResponse(question) as ClosedQuestionResponse))
-        } catch (e: Exception) {
-            ResponseEntity.badRequest().body(ApiResponse.error(e.message ?: "Failed to create shared question"))
-        }
+    fun createSharedClosedQuestion(@Valid @RequestBody request: ClosedQuestionRequest): ResponseEntity<ClosedQuestionResponse> {
+        val question = questionService.createSharedClosedQuestion(request)
+        val questionResponse = questionMapper.toResponse(question) as ClosedQuestionResponse
+
+        return ResponseEntity.ok(questionResponse)
     }
 
     @GetMapping("/shared")
-    fun getSharedQuestions(): ResponseEntity<ApiResponse<List<QuestionResponse>>> {
-        val questions = questionService.findSharedQuestions().map { questionMapper.toResponse(it) }
-        return ResponseEntity.ok(ApiResponse.success(questions))
+    fun getSharedQuestions(): ResponseEntity<List<QuestionResponse>> {
+        val questions = questionService.findSharedQuestions()
+        val questionsResponse = questions.map { questionMapper.toResponse(it) }
+
+        return ResponseEntity.ok(questionsResponse)
     }
 
-    @GetMapping("/shared/search")
-    fun searchSharedQuestions(@RequestParam query: String): ResponseEntity<ApiResponse<List<QuestionResponse>>> {
-        val questions = questionService.searchSharedQuestions(query).map { questionMapper.toResponse(it) }
-        return ResponseEntity.ok(ApiResponse.success(questions))
+    @GetMapping("/shared/open")
+    fun getSharedOpenQuestions(): ResponseEntity<List<QuestionResponse>> {
+        val questions = questionService.findSharedOpenQuestionsWithAnswers()
+        val questionsResponse = questions.map { questionMapper.toResponse(it) as OpenQuestionResponse }
+
+        return ResponseEntity.ok(questionsResponse)
     }
 
     @GetMapping("/shared/closed")
-    fun getSharedClosedQuestions(): ResponseEntity<ApiResponse<List<ClosedQuestionResponse>>> {
+    fun getSharedClosedQuestions(): ResponseEntity<List<ClosedQuestionResponse>> {
         val questions = questionService.findSharedClosedQuestionsWithAnswers()
-            .map { questionMapper.toResponse(it) as ClosedQuestionResponse }
-        return ResponseEntity.ok(ApiResponse.success(questions))
+        val questionsResponse = questions.map { questionMapper.toResponse(it) as ClosedQuestionResponse }
+
+        return ResponseEntity.ok(questionsResponse)
     }
 
+    // TODO : FIX LAZY INIT
+    /*
+    @GetMapping("/shared/search")
+    fun searchSharedQuestions(@RequestParam query: String): ResponseEntity<List<QuestionResponse>> {
+        val questions = questionService.searchSharedQuestions(query)
+        val questionsResponse = questions.map { questionMapper.toResponse(it) }
+
+        return ResponseEntity.ok(questionsResponse)
+    }
+
+     */
+
     @PostMapping("/{id}/make-shared")
-    fun makeQuestionShared(@PathVariable id: Long): ResponseEntity<ApiResponse<QuestionResponse>> {
-        return try {
-            val question = questionService.makeQuestionShared(id)
-            ResponseEntity.ok(ApiResponse.success(questionMapper.toResponse(question)))
-        } catch (e: Exception) {
-            ResponseEntity.badRequest().body(ApiResponse.error(e.message ?: "Failed to make question shared"))
-        }
+    fun makeQuestionShared(@PathVariable id: Long): ResponseEntity<QuestionResponse> {
+        val question = questionService.makeQuestionShared(id)
+        val questionResponse = questionMapper.toResponse(question)
+
+        return ResponseEntity.ok(questionResponse)
     }
 
     // Survey-specific question operations moved from SurveyController
     @PostMapping("/survey/{surveyId}")
-    fun addQuestionToSurvey(@PathVariable surveyId: Long, @Valid @RequestBody request: QuestionRequest): ResponseEntity<ApiResponse<QuestionResponse>> {
-        return try {
-            val question = when (request) {
-                is OpenQuestionRequest ->
-                    surveyService.addOpenQuestion(surveyId, request.text, request.required)
+    fun addQuestionToSurvey(@PathVariable surveyId: Long, @Valid @RequestBody request: QuestionRequest): ResponseEntity<QuestionResponse> {
+        val question = questionService.addQuestionToSurvey(surveyId, request)
+        val questionResponse = questionMapper.toResponse(question)
 
-                is ClosedQuestionRequest ->
-                    surveyService.addClosedQuestion(
-                        surveyId,
-                        request.text,
-                        request.required,
-                        request.selectionType,
-                        request.possibleAnswers
-                    )
-            }
-            ResponseEntity.ok(ApiResponse.success(questionMapper.toResponse(question)))
-        } catch (e: Exception) {
-            ResponseEntity.badRequest().body(ApiResponse.error(e.message ?: "Failed to add question"))
-        }
+        return ResponseEntity.ok(questionResponse)
     }
 
     @PostMapping("/survey/{surveyId}/shared/{questionId}")
-    fun addSharedQuestionToSurvey(@PathVariable surveyId: Long, @PathVariable questionId: Long): ResponseEntity<ApiResponse<QuestionResponse>> {
-        return try {
-            val question = surveyService.addSharedQuestion(surveyId, questionId)
-            ResponseEntity.ok(ApiResponse.success(questionMapper.toResponse(question)))
-        } catch (e: Exception) {
-            ResponseEntity.badRequest().body(ApiResponse.error(e.message ?: "Failed to add shared question"))
-        }
+    fun addSharedQuestionToSurvey(@PathVariable surveyId: Long, @PathVariable questionId: Long): ResponseEntity<Void> {
+        val question = surveyService.addSharedQuestion(surveyId, questionId)
+
+        return ResponseEntity.ok().build()
     }
 
     @DeleteMapping("/survey/{surveyId}/{questionId}")
-    fun removeQuestionFromSurvey(@PathVariable surveyId: Long, @PathVariable questionId: Long): ResponseEntity<ApiResponse<String>> {
-        return try {
-            surveyService.removeQuestion(surveyId, questionId)
-            ResponseEntity.ok(ApiResponse.success("Question removed successfully"))
-        } catch (e: Exception) {
-            ResponseEntity.badRequest().body(ApiResponse.error(e.message ?: "Failed to remove question"))
-        }
+    fun removeQuestionFromSurvey(@PathVariable surveyId: Long, @PathVariable questionId: Long): ResponseEntity<Void> {
+        surveyService.removeQuestion(surveyId, questionId)
+
+        return ResponseEntity.noContent().build()
     }
 
 }

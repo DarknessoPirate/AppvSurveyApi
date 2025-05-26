@@ -7,6 +7,7 @@ import com.darknessopirate.appvsurveyapi.domain.entity.answer.UserAnswer
 import com.darknessopirate.appvsurveyapi.domain.entity.question.ClosedQuestion
 import com.darknessopirate.appvsurveyapi.domain.entity.survey.SubmittedSurvey
 import com.darknessopirate.appvsurveyapi.domain.model.SubmissionSummary
+import org.hibernate.LazyInitializationException
 import org.springframework.stereotype.Component
 
 @Component
@@ -38,7 +39,11 @@ class SubmissionMapper(private val questionMapper: QuestionMapper) {
             ClosedUserAnswerResponse(
                 id = entity.id!!,
                 questionName = entity.question.text,
-                selectedAnswers = entity.selectedAnswers.map { questionMapper.toResponse(it) },
+                selectedAnswers = try {
+                    entity.selectedAnswers.map { questionMapper.toResponse(it) }
+                } catch (e: LazyInitializationException) {
+                    emptyList() // fallback if selectedAnswers not loaded
+                },
                 selectionType = closedQuestion.selectionType
             )
         }
@@ -50,8 +55,6 @@ class SubmissionMapper(private val questionMapper: QuestionMapper) {
         questionName = entity.question.text,
         textValue = entity.textValue
     )
-
-
 
     fun toResponse(entity: SubmissionSummary): SubmissionSummaryResponse = SubmissionSummaryResponse(
         surveyId = entity.surveyId,
