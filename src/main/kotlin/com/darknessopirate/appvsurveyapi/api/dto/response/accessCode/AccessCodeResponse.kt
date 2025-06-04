@@ -1,14 +1,15 @@
-package com.darknessopirate.appvsurveyapi.api.dto.response.survey
+package com.darknessopirate.appvsurveyapi.api.dto.response.accessCode
 
 import java.time.LocalDateTime
 
-data class SurveyResponse(
+data class AccessCodeResponse(
     val id: Long,
+    val code: String,
     val title: String,
     val description: String?,
     val createdAt: LocalDateTime,
     val expiresAt: LocalDateTime?,
     val isActive: Boolean,
-    val accessCodeCount: Int, // Changed from accessCode
-    val questionCount: Int
+    val usageCount: Int,
+    val maxUses: Int?
 )

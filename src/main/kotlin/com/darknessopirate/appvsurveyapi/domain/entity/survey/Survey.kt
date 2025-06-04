@@ -24,12 +24,13 @@ data class Survey(
     @Column(name = "is_active")
     var isActive: Boolean = true,
 
-    @Column(unique = true)
-    var accessCode: String? = null,
+    @OneToMany(mappedBy = "survey", cascade = [CascadeType.ALL], orphanRemoval = true)
+    val accessCodes: MutableList<AccessCode> = mutableListOf(),
 
     @OneToMany(mappedBy = "survey", cascade = [CascadeType.ALL], orphanRemoval = true)
     val questions: MutableList<Question> = mutableListOf()
-) {
+)
+{
     fun addQuestion(question: Question) {
         questions.add(question)
         question.survey = this
@@ -40,15 +41,14 @@ data class Survey(
         question.survey = null
     }
 
-    fun addQuestions(newQuestions: List<Question>) {
-        newQuestions.forEach { question ->
-            // Ensure the question is not shared when added to a survey
-            question.isShared = false
-            addQuestion(question)
-        }
-        // Reorder display orders
-        questions.forEachIndexed { index, question ->
-            question.displayOrder = index + 1
-        }
+    fun addAccessCode(accessCode: AccessCode) {
+        accessCodes.add(accessCode)
+        accessCode.survey = this
     }
+
+    fun removeAccessCode(accessCode: AccessCode) {
+        accessCodes.remove(accessCode)
+        accessCode.survey = null
+    }
+
 }

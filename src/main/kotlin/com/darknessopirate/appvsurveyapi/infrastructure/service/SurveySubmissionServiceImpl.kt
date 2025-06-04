@@ -5,10 +5,10 @@ import com.darknessopirate.appvsurveyapi.api.dto.request.submit.ClosedAnswerRequ
 import com.darknessopirate.appvsurveyapi.api.dto.request.submit.OpenAnswerRequest
 import com.darknessopirate.appvsurveyapi.domain.entity.answer.ClosedUserAnswer
 import com.darknessopirate.appvsurveyapi.domain.entity.answer.OpenUserAnswer
-import com.darknessopirate.appvsurveyapi.domain.entity.survey.SubmittedSurvey
 import com.darknessopirate.appvsurveyapi.domain.entity.answer.UserAnswer
 import com.darknessopirate.appvsurveyapi.domain.entity.question.ClosedQuestion
 import com.darknessopirate.appvsurveyapi.domain.entity.question.OpenQuestion
+import com.darknessopirate.appvsurveyapi.domain.entity.survey.SubmittedSurvey
 import com.darknessopirate.appvsurveyapi.domain.entity.survey.Survey
 import com.darknessopirate.appvsurveyapi.domain.enums.SelectionType
 import com.darknessopirate.appvsurveyapi.domain.model.AnswerStatistic

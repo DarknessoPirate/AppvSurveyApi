@@ -10,17 +10,8 @@ import org.springframework.stereotype.Repository
 @Repository
 interface QuestionRepository : JpaRepository<Question, Long> {
 
-    // Find all questions for a survey
-    fun findBySurveyIdOrderByDisplayOrder(surveyId: Long): List<Question>
-
     // Find shared questions (available for copying)
     @Query("SELECT q FROM Question q WHERE q.isShared = true AND q.survey IS NULL")
     fun findShared(): List<Question>
 
-    // Search shared questions
-    @Query("SELECT q FROM Question q WHERE q.isShared = true AND q.survey IS NULL AND LOWER(q.text) LIKE LOWER(CONCAT('%', :text, '%'))")
-    fun searchShared(@Param("text") text: String): List<Question>
-
-    // Find questions with specific IDs
-    fun findByIdIn(ids: List<Long>): List<Question>
 }

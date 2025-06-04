@@ -2,10 +2,9 @@ package com.darknessopirate.appvsurveyapi.domain.repository.survey
 
 import com.darknessopirate.appvsurveyapi.domain.entity.survey.SubmittedSurvey
 import org.springframework.data.jpa.repository.JpaRepository
-import org.springframework.stereotype.Repository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
-import java.time.LocalDateTime
+import org.springframework.stereotype.Repository
 
 @Repository
 interface SubmittedSurveyRepository : JpaRepository<SubmittedSurvey, Long> {

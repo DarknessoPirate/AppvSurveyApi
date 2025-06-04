@@ -1,16 +1,10 @@
 package com.darknessopirate.appvsurveyapi.domain.entity.question
 
-import com.darknessopirate.appvsurveyapi.domain.enums.SelectionType
 import com.darknessopirate.appvsurveyapi.domain.entity.answer.ClosedUserAnswer
-import com.darknessopirate.appvsurveyapi.domain.entity.survey.SubmittedSurvey
 import com.darknessopirate.appvsurveyapi.domain.entity.answer.UserAnswer
-import jakarta.persistence.CascadeType
-import jakarta.persistence.DiscriminatorValue
-import jakarta.persistence.Entity
-import jakarta.persistence.EnumType
-import jakarta.persistence.Enumerated
-import jakarta.persistence.OneToMany
-import jakarta.persistence.Table
+import com.darknessopirate.appvsurveyapi.domain.entity.survey.SubmittedSurvey
+import com.darknessopirate.appvsurveyapi.domain.enums.SelectionType
+import jakarta.persistence.*
 
 @Entity
 @Table(name = "closed_questions")
@@ -22,7 +16,7 @@ class ClosedQuestion(
     isShared: Boolean = false,
 
     @Enumerated(EnumType.STRING)
-    val selectionType: SelectionType = SelectionType.SINGLE,
+    var selectionType: SelectionType = SelectionType.SINGLE,
 
     @OneToMany(mappedBy = "question", cascade = [CascadeType.ALL], orphanRemoval = true)
     val possibleAnswers: MutableList<QuestionAnswer> = mutableListOf()

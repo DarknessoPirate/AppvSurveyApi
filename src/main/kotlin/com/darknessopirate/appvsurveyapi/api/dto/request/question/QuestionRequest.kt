@@ -3,9 +3,6 @@ package com.darknessopirate.appvsurveyapi.api.dto.request.question
 import com.darknessopirate.appvsurveyapi.domain.enums.QuestionType
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
-import io.swagger.v3.oas.annotations.media.Schema
-import jakarta.validation.Valid
-import jakarta.validation.constraints.NotBlank
 
 @JsonTypeInfo(
     use = JsonTypeInfo.Id.NAME,

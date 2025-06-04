@@ -5,36 +5,33 @@ import com.darknessopirate.appvsurveyapi.api.dto.request.survey.CreateSurveyWith
 import com.darknessopirate.appvsurveyapi.api.dto.response.survey.SurveyDetailResponse
 import com.darknessopirate.appvsurveyapi.api.dto.response.survey.SurveyResponse
 import com.darknessopirate.appvsurveyapi.api.dto.response.survey.SurveyStatisticsResponse
-import com.darknessopirate.appvsurveyapi.domain.entity.question.Question
 import com.darknessopirate.appvsurveyapi.domain.entity.survey.Survey
 import com.darknessopirate.appvsurveyapi.domain.model.SurveyStatistics
 import org.springframework.stereotype.Component
 
 @Component
-class SurveyMapper(private val questionMapper: QuestionMapper) {
+class SurveyMapper(private val questionMapper: QuestionMapper, private val accessCodeMapper: AccessCodeMapper) {
     /*
     * REQUESTS
     */
 
     // CreateSurveyRequest -> Survey
-    fun toEntity(request: CreateSurveyRequest) : Survey {
+    fun toEntity(request: CreateSurveyRequest): Survey {
         return Survey(
             title = request.title,
             description = request.description,
-            expiresAt = request.expiresAt ,
+            expiresAt = request.expiresAt,
+            isActive = false
         )
-
     }
 
-    // CreateSurveyWithQuestionsRequest -> (Survey,List<Question>)
-    fun toEntity(request: CreateSurveyWithQuestionsRequest): Pair<Survey, List<Question>> {
-        val surveyEntity = Survey(
+    fun toEntity(request: CreateSurveyWithQuestionsRequest): Survey {
+        return Survey(
             title = request.title,
             description = request.description,
-            expiresAt = request.expiresAt ,
+            expiresAt = request.expiresAt,
+            isActive = false
         )
-        val questions = questionMapper.toEntity(request.questions)
-        return Pair(surveyEntity, questions)
     }
 
     /*
@@ -49,7 +46,7 @@ class SurveyMapper(private val questionMapper: QuestionMapper) {
         createdAt = entity.createdAt,
         expiresAt = entity.expiresAt,
         isActive = entity.isActive,
-        accessCode = entity.accessCode,
+        accessCodeCount = entity.accessCodes.size, // Changed from accessCode to accessCodeCount
         questionCount = entity.questions.size
     )
 
@@ -61,7 +58,7 @@ class SurveyMapper(private val questionMapper: QuestionMapper) {
         createdAt = entity.createdAt,
         expiresAt = entity.expiresAt,
         isActive = entity.isActive,
-        accessCode = entity.accessCode,
+        accessCodes = entity.accessCodes.map { accessCodeMapper.toResponse(it) }, // Changed to list of access codes
         questions = entity.questions.map { questionMapper.toResponse(it) }
     )
 

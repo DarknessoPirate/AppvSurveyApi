@@ -2,8 +2,8 @@ package com.darknessopirate.appvsurveyapi.domain.service
 
 import com.darknessopirate.appvsurveyapi.api.dto.request.submit.AnswerRequest
 import com.darknessopirate.appvsurveyapi.domain.entity.answer.OpenUserAnswer
-import com.darknessopirate.appvsurveyapi.domain.entity.survey.SubmittedSurvey
 import com.darknessopirate.appvsurveyapi.domain.entity.answer.UserAnswer
+import com.darknessopirate.appvsurveyapi.domain.entity.survey.SubmittedSurvey
 import com.darknessopirate.appvsurveyapi.domain.model.AnswerStatistic
 import com.darknessopirate.appvsurveyapi.domain.model.SubmissionSummary
 import java.time.LocalDateTime

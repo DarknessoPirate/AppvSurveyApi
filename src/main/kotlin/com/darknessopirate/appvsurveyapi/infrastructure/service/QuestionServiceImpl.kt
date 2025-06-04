@@ -2,11 +2,12 @@ package com.darknessopirate.appvsurveyapi.infrastructure.service
 import com.darknessopirate.appvsurveyapi.api.dto.request.question.ClosedQuestionRequest
 import com.darknessopirate.appvsurveyapi.api.dto.request.question.OpenQuestionRequest
 import com.darknessopirate.appvsurveyapi.api.dto.request.question.QuestionRequest
-import com.darknessopirate.appvsurveyapi.domain.enums.SelectionType
 import com.darknessopirate.appvsurveyapi.domain.entity.question.ClosedQuestion
 import com.darknessopirate.appvsurveyapi.domain.entity.question.OpenQuestion
 import com.darknessopirate.appvsurveyapi.domain.entity.question.Question
 import com.darknessopirate.appvsurveyapi.domain.entity.question.QuestionAnswer
+import com.darknessopirate.appvsurveyapi.domain.enums.SelectionType
+import com.darknessopirate.appvsurveyapi.domain.exception.InvalidOperationException
 import com.darknessopirate.appvsurveyapi.domain.repository.question.ClosedQuestionRepository
 import com.darknessopirate.appvsurveyapi.domain.repository.question.OpenQuestionRepository
 import com.darknessopirate.appvsurveyapi.domain.repository.question.QuestionRepository
@@ -60,6 +61,81 @@ class QuestionServiceImpl(
         }
 
         return closedQuestionRepository.save(question)
+    }
+
+    override fun updateQuestion(id: Long, request: QuestionRequest): Question {
+        val existingQuestion = questionRepository.findById(id).orElseThrow {
+            EntityNotFoundException("Question not found with id: $id")
+        }
+
+        when (request) {
+            is OpenQuestionRequest -> {
+                if (existingQuestion !is OpenQuestion) {
+                    throw IllegalArgumentException("Cannot change question type")
+                }
+                existingQuestion.text = request.text
+                existingQuestion.required = request.required
+            }
+            is ClosedQuestionRequest -> {
+                if (existingQuestion !is ClosedQuestion) {
+                    throw IllegalArgumentException("Cannot change question type")
+                }
+                existingQuestion.text = request.text
+                existingQuestion.required = request.required
+                existingQuestion.selectionType = request.selectionType
+
+                // Update possible answers
+                existingQuestion.possibleAnswers.clear()
+                request.possibleAnswers.forEachIndexed { index, answerText ->
+                    val answer = QuestionAnswer(
+                        text = answerText,
+                        displayOrder = index + 1
+                    )
+                    existingQuestion.addPossibleAnswer(answer)
+                }
+            }
+        }
+
+        return questionRepository.save(existingQuestion)
+    }
+
+    override fun duplicateQuestion(id: Long): Question {
+        val originalQuestion = questionRepository.findById(id).orElseThrow {
+            EntityNotFoundException("Question not found with id: $id")
+        }
+
+        val duplicatedQuestion = originalQuestion.copy()
+        duplicatedQuestion.text = "${duplicatedQuestion.text} (Copy)"
+        duplicatedQuestion.survey = null // Make it shared by default
+        duplicatedQuestion.isShared = true
+
+        return questionRepository.save(duplicatedQuestion)
+    }
+
+    override fun deleteQuestion(id: Long) {
+        val question = questionRepository.findById(id).orElseThrow {
+            EntityNotFoundException("Question not found with id: $id")
+        }
+
+        // Check if question is being used in any surveys
+        if (question.survey != null) {
+            throw InvalidOperationException("Cannot delete question that is part of a survey")
+        }
+
+        questionRepository.deleteById(id)
+    }
+
+    override fun findById(id: Long): Question {
+        val question = questionRepository.findById(id).orElseThrow {
+            EntityNotFoundException("Question not found with id: $id")
+        }
+
+        // Initialize lazy loaded data
+        if (question is ClosedQuestion) {
+            Hibernate.initialize(question.possibleAnswers)
+        }
+
+        return question
     }
 
     override fun addQuestionToSurvey(surveyId: Long, request: QuestionRequest): Question {
@@ -123,16 +199,6 @@ class QuestionServiceImpl(
         return questions
     }
 
-    /**
-     * Find shared questions by search text
-     */
-    override fun searchSharedQuestions(searchText: String): List<Question> {
-        return questionRepository.searchShared(searchText)
-    }
-
-    /**
-     * Find shared closed questions with their answers
-     */
     override fun findSharedClosedQuestionsWithAnswers(): List<ClosedQuestion> {
         return closedQuestionRepository.findSharedWithAnswers()
     }

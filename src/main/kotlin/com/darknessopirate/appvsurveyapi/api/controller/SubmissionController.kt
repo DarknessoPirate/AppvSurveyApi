@@ -2,13 +2,10 @@ package com.darknessopirate.appvsurveyapi.api.controller
 
 import com.darknessopirate.appvsurveyapi.api.dto.request.submit.SubmitByAccessCodeRequest
 import com.darknessopirate.appvsurveyapi.api.dto.request.submit.SubmitSurveyRequest
-import com.darknessopirate.appvsurveyapi.api.dto.response.ApiResponse
 import com.darknessopirate.appvsurveyapi.api.dto.response.submit.*
 import com.darknessopirate.appvsurveyapi.domain.model.AnswerStatistic
-import com.darknessopirate.appvsurveyapi.domain.service.IQuestionService
 import com.darknessopirate.appvsurveyapi.domain.service.ISurveySubmissionService
 import com.darknessopirate.appvsurveyapi.infrastructure.mappers.SubmissionMapper
-import jakarta.persistence.EntityNotFoundException
 import jakarta.validation.Valid
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.ResponseEntity

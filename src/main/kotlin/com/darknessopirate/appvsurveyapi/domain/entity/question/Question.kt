@@ -1,8 +1,8 @@
 package com.darknessopirate.appvsurveyapi.domain.entity.question
 
+import com.darknessopirate.appvsurveyapi.domain.entity.answer.UserAnswer
 import com.darknessopirate.appvsurveyapi.domain.entity.survey.SubmittedSurvey
 import com.darknessopirate.appvsurveyapi.domain.entity.survey.Survey
-import com.darknessopirate.appvsurveyapi.domain.entity.answer.UserAnswer
 import jakarta.persistence.*
 
 @Entity

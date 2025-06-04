@@ -2,11 +2,11 @@ package com.darknessopirate.appvsurveyapi.domain.service
 
 import com.darknessopirate.appvsurveyapi.api.dto.request.survey.CreateSurveyRequest
 import com.darknessopirate.appvsurveyapi.api.dto.request.survey.CreateSurveyWithQuestionsRequest
-import com.darknessopirate.appvsurveyapi.domain.enums.SelectionType
 import com.darknessopirate.appvsurveyapi.domain.entity.question.ClosedQuestion
 import com.darknessopirate.appvsurveyapi.domain.entity.question.OpenQuestion
 import com.darknessopirate.appvsurveyapi.domain.entity.question.Question
 import com.darknessopirate.appvsurveyapi.domain.entity.survey.Survey
+import com.darknessopirate.appvsurveyapi.domain.enums.SelectionType
 import com.darknessopirate.appvsurveyapi.domain.model.SurveyStatistics
 import java.time.LocalDateTime
 
@@ -20,7 +20,7 @@ interface ISurveyService {
     /**
      * Create survey with questions
      */
-    fun createSurveyWithQuestions(request: CreateSurveyWithQuestionsRequest): Survey
+    fun createSurveyWithSelectedQuestions(request: CreateSurveyWithQuestionsRequest): Survey
 
     /**
      * Update the survey with new data
@@ -75,7 +75,7 @@ interface ISurveyService {
     /**
      * Activate/deactivate survey
      */
-    fun setActive(surveyId: Long, isActive: Boolean): Survey
+    fun toggleActive(surveyId: Long)
 
     /**
      * Set survey expiration
@@ -83,19 +83,16 @@ interface ISurveyService {
     fun setExpiration(surveyId: Long, expiresAt: LocalDateTime?): Survey
 
     /**
-     * Generate unique access code
-     */
-    fun generateAccessCode(surveyId: Long): String
-
-    /**
      * Copy survey (with all questions)
      */
-    fun copySurvey(surveyId: Long, newTitle: String, includeAccessCode: Boolean = false): Survey
+    fun copySurvey(surveyId: Long, newTitle: String): Survey
 
     /**
      * Get survey statistics
      */
     fun getStatistics(surveyId: Long): SurveyStatistics
+
+    fun findAllSurveys(): List<Survey>
 
     /**
      * Find active surveys

@@ -3,15 +3,12 @@ package com.darknessopirate.appvsurveyapi.api.controller
 import com.darknessopirate.appvsurveyapi.api.dto.request.question.ClosedQuestionRequest
 import com.darknessopirate.appvsurveyapi.api.dto.request.question.OpenQuestionRequest
 import com.darknessopirate.appvsurveyapi.api.dto.request.question.QuestionRequest
-import com.darknessopirate.appvsurveyapi.api.dto.response.ApiResponse
 import com.darknessopirate.appvsurveyapi.api.dto.response.question.ClosedQuestionResponse
 import com.darknessopirate.appvsurveyapi.api.dto.response.question.OpenQuestionResponse
 import com.darknessopirate.appvsurveyapi.api.dto.response.question.QuestionResponse
-import com.darknessopirate.appvsurveyapi.domain.enums.QuestionType
 import com.darknessopirate.appvsurveyapi.domain.service.IQuestionService
 import com.darknessopirate.appvsurveyapi.domain.service.ISurveyService
 import com.darknessopirate.appvsurveyapi.infrastructure.mappers.QuestionMapper
-import io.swagger.v3.oas.annotations.Operation
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
@@ -39,6 +36,33 @@ class QuestionController(
         val question = questionService.createSharedClosedQuestion(request)
         val questionResponse = questionMapper.toResponse(question) as ClosedQuestionResponse
 
+        return ResponseEntity.ok(questionResponse)
+    }
+
+    @PutMapping("/{id}")
+    fun updateQuestion(@PathVariable id: Long, @Valid @RequestBody request: QuestionRequest): ResponseEntity<QuestionResponse> {
+        val question = questionService.updateQuestion(id, request)
+        val questionResponse = questionMapper.toResponse(question)
+        return ResponseEntity.ok(questionResponse)
+    }
+
+    @PostMapping("/{id}/duplicate")
+    fun duplicateQuestion(@PathVariable id: Long): ResponseEntity<QuestionResponse> {
+        val question = questionService.duplicateQuestion(id)
+        val questionResponse = questionMapper.toResponse(question)
+        return ResponseEntity.ok(questionResponse)
+    }
+
+    @DeleteMapping("/{id}")
+    fun deleteQuestion(@PathVariable id: Long): ResponseEntity<Void> {
+        questionService.deleteQuestion(id)
+        return ResponseEntity.noContent().build()
+    }
+
+    @GetMapping("/{id}")
+    fun getQuestion(@PathVariable id: Long): ResponseEntity<QuestionResponse> {
+        val question = questionService.findById(id)
+        val questionResponse = questionMapper.toResponse(question)
         return ResponseEntity.ok(questionResponse)
     }
 

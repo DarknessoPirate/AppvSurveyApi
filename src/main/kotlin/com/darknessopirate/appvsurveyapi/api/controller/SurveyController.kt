@@ -1,23 +1,22 @@
 package com.darknessopirate.appvsurveyapi.api.controller
 
-import com.darknessopirate.appvsurveyapi.api.dto.request.question.QuestionRequest
+import com.darknessopirate.appvsurveyapi.api.dto.request.accessCode.CreateAccessCodeRequest
+import com.darknessopirate.appvsurveyapi.api.dto.request.accessCode.UpdateAccessCodeRequest
 import com.darknessopirate.appvsurveyapi.api.dto.request.survey.CopySurveyRequest
 import com.darknessopirate.appvsurveyapi.api.dto.request.survey.CreateSurveyRequest
 import com.darknessopirate.appvsurveyapi.api.dto.request.survey.CreateSurveyWithQuestionsRequest
-import com.darknessopirate.appvsurveyapi.api.dto.response.ApiResponse
-import com.darknessopirate.appvsurveyapi.api.dto.response.question.QuestionResponse
-import com.darknessopirate.appvsurveyapi.api.dto.response.survey.AccessCodeResponse
+import com.darknessopirate.appvsurveyapi.api.dto.response.accessCode.AccessCodeListResponse
+import com.darknessopirate.appvsurveyapi.api.dto.response.accessCode.AccessCodeResponse
 import com.darknessopirate.appvsurveyapi.api.dto.response.survey.SurveyDetailResponse
 import com.darknessopirate.appvsurveyapi.api.dto.response.survey.SurveyResponse
-import com.darknessopirate.appvsurveyapi.domain.model.SurveyStatistics
 import com.darknessopirate.appvsurveyapi.api.dto.response.survey.SurveyStatisticsResponse
-import com.darknessopirate.appvsurveyapi.domain.service.IQuestionService
+import com.darknessopirate.appvsurveyapi.domain.service.IAccessCodeService
 import com.darknessopirate.appvsurveyapi.domain.service.ISurveyService
+import com.darknessopirate.appvsurveyapi.infrastructure.mappers.AccessCodeMapper
 import com.darknessopirate.appvsurveyapi.infrastructure.mappers.SurveyMapper
-import com.darknessopirate.appvsurveyapi.infrastructure.service.QuestionServiceImpl
+import jakarta.persistence.EntityNotFoundException
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
-import org.springframework.transaction.annotation.Transactional
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 
@@ -27,6 +26,8 @@ import org.springframework.web.bind.annotation.*
 class SurveyController(
     private val surveyService: ISurveyService,
     private val surveyMapper: SurveyMapper,
+    private val accessCodeService: IAccessCodeService,
+    private val accessCodeMapper: AccessCodeMapper,
 ) {
 
     @PostMapping
@@ -39,11 +40,10 @@ class SurveyController(
 
     @PostMapping("/with-questions")
     fun createSurveyWithQuestions(@Valid @RequestBody request: CreateSurveyWithQuestionsRequest): ResponseEntity<SurveyDetailResponse> {
-        val survey = surveyService.createSurveyWithQuestions(request)
+        val survey = surveyService.createSurveyWithSelectedQuestions(request)
         val createdSurveyDetailed = surveyMapper.toDetailResponse(survey)
 
         return ResponseEntity.ok(createdSurveyDetailed)
-
     }
 
     @GetMapping("/{id}")
@@ -54,12 +54,13 @@ class SurveyController(
         return ResponseEntity.ok(surveyDetailedResponse)
     }
 
-    @GetMapping("/access-code/{accessCode}")
-    fun getSurveyByAccessCode(@PathVariable accessCode: String): ResponseEntity<SurveyDetailResponse> {
-        val survey = surveyService.findByAccessCode(accessCode)
-        val detailedSurveyResponse = surveyMapper.toDetailResponse(survey)
 
-        return ResponseEntity.ok(detailedSurveyResponse)
+    @GetMapping("/all")
+    fun getAllSurveys(): ResponseEntity<List<SurveyResponse>> {
+        val allSurveys = surveyService.findAllSurveys()
+        val response = allSurveys.map { surveyMapper.toResponse(it) }
+
+        return ResponseEntity.ok(response)
     }
 
     @GetMapping
@@ -86,16 +87,9 @@ class SurveyController(
         return ResponseEntity.ok(updatedSurveyResponse)
     }
 
-    @PostMapping("/{id}/access-code")
-    fun generateAccessCode(@PathVariable id: Long): ResponseEntity<AccessCodeResponse> {
-            val accessCode = surveyService.generateAccessCode(id)
-
-            return ResponseEntity.ok(AccessCodeResponse(accessCode))
-    }
-
     @PostMapping("/{id}/copy")
     fun copySurvey(@PathVariable id: Long, @Valid @RequestBody request: CopySurveyRequest): ResponseEntity<SurveyResponse> {
-        val survey = surveyService.copySurvey(id, request.newTitle, request.includeAccessCode)
+        val survey = surveyService.copySurvey(id, request.newTitle)
         val copiedSurveyResponse = surveyMapper.toResponse(survey)
 
         return ResponseEntity.ok(copiedSurveyResponse)
@@ -109,12 +103,10 @@ class SurveyController(
         return ResponseEntity.ok(statisticsResponse)
     }
 
-    @PutMapping("/{id}/active")
-    fun setActive(@PathVariable id: Long, @RequestParam isActive: Boolean): ResponseEntity<SurveyResponse> {
-        val survey = surveyService.setActive(id, isActive)
-        val updatedSurveyResponse = surveyMapper.toResponse(survey)
-
-        return ResponseEntity.ok(updatedSurveyResponse)
+    @PatchMapping("/{id}/active")
+    fun toggleActive(@PathVariable id: Long): ResponseEntity<Unit> {
+        surveyService.toggleActive(id)
+        return ResponseEntity.noContent().build()
     }
 
     @DeleteMapping("/{id}")
@@ -122,6 +114,59 @@ class SurveyController(
         surveyService.deleteSurvey(id)
 
         return ResponseEntity.noContent().build()
+    }
+
+    //
+    // ACCESS CODE ENDPOINTS
+    //
+    @PostMapping("/{id}/access-codes")
+    fun createAccessCode(
+        @PathVariable id: Long,
+        @Valid @RequestBody request: CreateAccessCodeRequest
+    ): ResponseEntity<AccessCodeResponse> {
+        val accessCode = accessCodeService.createAccessCode(id, request)
+        val response = accessCodeMapper.toResponse(accessCode)
+        return ResponseEntity.ok(response)
+    }
+
+    @GetMapping("/{id}/access-codes")
+    fun getAccessCodes(@PathVariable id: Long): ResponseEntity<AccessCodeListResponse> {
+        val accessCodes = accessCodeService.getAccessCodesBySurvey(id)
+        val response = AccessCodeListResponse(
+            accessCodes = accessCodes.map { accessCodeMapper.toResponse(it) }
+        )
+        return ResponseEntity.ok(response)
+    }
+
+    @PutMapping("/access-codes/{codeId}")
+    fun updateAccessCode(
+        @PathVariable codeId: Long,
+        @Valid @RequestBody request: UpdateAccessCodeRequest
+    ): ResponseEntity<AccessCodeResponse> {
+        val accessCode = accessCodeService.updateAccessCode(codeId, request)
+        val response = accessCodeMapper.toResponse(accessCode)
+        return ResponseEntity.ok(response)
+    }
+
+    @DeleteMapping("/access-codes/{codeId}")
+    fun deleteAccessCode(@PathVariable codeId: Long): ResponseEntity<Void> {
+        accessCodeService.deleteAccessCode(codeId)
+        return ResponseEntity.noContent().build()
+    }
+
+    // Update the existing access code endpoint to find by any access code
+    @GetMapping("/access-code/{accessCode}")
+    fun getSurveyByAccessCode(@PathVariable accessCode: String): ResponseEntity<SurveyDetailResponse> {
+        val accessCodeEntity = accessCodeService.validateAccessCode(accessCode)
+            ?: throw EntityNotFoundException("Invalid or expired access code")
+
+        val survey = accessCodeEntity.survey ?: throw EntityNotFoundException("Survey not found")
+
+        // Increment usage count
+        accessCodeService.incrementUsage(accessCodeEntity.id!!)
+
+        val detailedSurveyResponse = surveyMapper.toDetailResponse(survey)
+        return ResponseEntity.ok(detailedSurveyResponse)
     }
 
 }

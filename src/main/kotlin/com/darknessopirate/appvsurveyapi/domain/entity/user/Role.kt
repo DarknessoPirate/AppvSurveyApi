@@ -1,11 +1,6 @@
 package com.darknessopirate.appvsurveyapi.domain.entity.user
 
-import jakarta.persistence.Column
-import jakarta.persistence.Entity
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
-import jakarta.persistence.Id
-import jakarta.persistence.Table
+import jakarta.persistence.*
 
 // TODO: ADD ROLE BASED AUTHENTICATION
 @Entity
