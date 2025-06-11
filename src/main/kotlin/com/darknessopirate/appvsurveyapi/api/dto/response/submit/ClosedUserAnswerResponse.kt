@@ -5,13 +5,13 @@ import com.darknessopirate.appvsurveyapi.domain.enums.QuestionType
 import com.darknessopirate.appvsurveyapi.domain.enums.SelectionType
 
 data class ClosedUserAnswerResponse(
-    val id: Long,
-    val questionName: String,
+    override val questionId: Long,
+    override val questionText: String,
     val selectedAnswers: List<QuestionAnswerResponse>,
     val selectionType: SelectionType
 ) : UserAnswerResponse(
-    id,
-    questionName,
+    questionId,
+    questionText,
     when(selectionType) {
         SelectionType.SINGLE -> QuestionType.DROPDOWN
         SelectionType.MULTIPLE -> QuestionType.CHECKBOX

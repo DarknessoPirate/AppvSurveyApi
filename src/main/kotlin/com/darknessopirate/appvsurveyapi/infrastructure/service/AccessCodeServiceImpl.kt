@@ -77,8 +77,16 @@ class AccessCodeServiceImpl(
         return accessCodeRepository.save(accessCode)
     }
 
-    override fun findByCode(code: String): AccessCode? {
-        return accessCodeRepository.findByCode(code)
+
+    // TODO : remove unused later
+    override fun findByCode(code: String): AccessCode {
+        val foundCode = accessCodeRepository.findByCode(code)
+
+        if (foundCode == null) {
+            throw EntityNotFoundException("Access code not found: $code")
+        }
+
+        return foundCode
     }
 
 

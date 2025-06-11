@@ -29,9 +29,7 @@ class QuestionServiceImpl(
     private val questionMapper: QuestionMapper
 ) : IQuestionService {
 
-    /**
-     * Create a shared question (manually created, available for copying)
-     */
+    // Create a shared question (manually created, available for copying)
     override fun createSharedOpenQuestion(request: OpenQuestionRequest): OpenQuestion {
         val question = OpenQuestion(
             text = request.text,
@@ -41,9 +39,7 @@ class QuestionServiceImpl(
         return openQuestionRepository.save(question)
     }
 
-    /**
-     * Create a shared closed question with possible answers
-     */
+    // Create a shared closed question with possible answers
     override fun createSharedClosedQuestion(request: ClosedQuestionRequest): ClosedQuestion {
         val question = ClosedQuestion(
             text = request.text,
@@ -158,9 +154,7 @@ class QuestionServiceImpl(
         return savedQuestion
     }
 
-    /**
-     * Copy a shared question to a survey
-     */
+    // Copy a shared question to a survey
     override fun copyQuestionToSurvey(questionId: Long, surveyId: Long, displayOrder: Int): Question {
         val originalQuestion = questionRepository.findById(questionId).orElseThrow {
             EntityNotFoundException("Question not found with id: $questionId")
@@ -185,9 +179,7 @@ class QuestionServiceImpl(
         return copiedQuestion
     }
 
-    /**
-     * Find all shared questions available for copying
-     */
+    // Find all shared questions available for copying
     override fun findSharedQuestions(): List<Question> {
         val questions = questionRepository.findShared()
         questions.forEach { question ->
@@ -207,9 +199,7 @@ class QuestionServiceImpl(
         return openQuestionRepository.findShared()
     }
 
-    /**
-     * Create survey-specific question directly (not shared)
-     */
+    // Create survey-specific question directly (not shared)
     override fun createSurveySpecificOpenQuestion(
         surveyId: Long,
         text: String,
@@ -233,9 +223,7 @@ class QuestionServiceImpl(
         return question
     }
 
-    /**
-     * Create survey-specific closed question directly (not shared)
-     */
+    // Create survey-specific closed question directly (not shared)
     override fun createSurveySpecificClosedQuestion(
         surveyId: Long,
         text: String,
@@ -270,9 +258,7 @@ class QuestionServiceImpl(
         return question
     }
 
-     /*
-         Convert an existing survey question to a shared question
-     */
+     // Convert an existing survey question to a shared question
      override fun makeQuestionShared(questionId: Long): Question {
         val question = questionRepository.findById(questionId).orElseThrow {
             EntityNotFoundException("Question not found with id: $questionId")

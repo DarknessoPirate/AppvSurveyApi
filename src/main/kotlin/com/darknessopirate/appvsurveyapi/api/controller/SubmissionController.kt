@@ -21,14 +21,6 @@ class SubmissionController(
     private val submissionMapper: SubmissionMapper
 ) {
 
-    @PostMapping("/survey/{surveyId}")
-    fun submitSurvey(@PathVariable surveyId: Long, @Valid @RequestBody request: SubmitSurveyRequest): ResponseEntity<SubmittedSurveyResponse> {
-        val submission = submissionService.submitSurvey(surveyId, request.answers)
-        val submissionResponse = submissionMapper.toResponse(submission)
-
-        return ResponseEntity.ok(submissionResponse)
-    }
-
     @PostMapping("/access-code")
     fun submitByAccessCode(@Valid @RequestBody request: SubmitByAccessCodeRequest): ResponseEntity<SubmittedSurveyResponse> {
         val submission = submissionService.submitByAccessCode(request.accessCode, request.answers)
@@ -66,24 +58,25 @@ class SubmissionController(
         return ResponseEntity.ok(submissionsResponse)
     }
 
+    @GetMapping("/access-code/{accessCode}/detailed")
+    fun getSubmissionsByAccessCodeWithAnswers(@PathVariable accessCode: String): ResponseEntity<List<SubmissionDetailResponse>> {
+        val submissions = submissionService.getSubmissionsByAccessCodeWithAnswers(accessCode)
+        val submissionsResponse = submissions.map { submissionMapper.toDetailResponse(it) }
+
+        return ResponseEntity.ok(submissionsResponse)
+    }
+
+    @GetMapping("/access-code/{accessCode}")
+    fun getSubmissionsByAccessCode(@PathVariable accessCode: String): ResponseEntity<List<SubmittedSurveyResponse>> {
+        val submissions = submissionService.getSubmissionsByAccessCode(accessCode)
+        val submissionsResponse = submissions.map { submissionMapper.toResponse(it) }
+
+        return ResponseEntity.ok(submissionsResponse)
+    }
+
     @GetMapping("/question/{questionId}/answers")
     fun getAnswersForQuestion(@PathVariable questionId: Long): ResponseEntity<List<UserAnswerResponse>> {
         val answers = submissionService.getAnswersForQuestion(questionId)
-        val answersResponse = answers.map { submissionMapper.toResponse(it) }
-
-        return ResponseEntity.ok(answersResponse)
-    }
-
-    @GetMapping("/question/{questionId}/statistics")
-    fun getAnswerStatistics(@PathVariable questionId: Long): ResponseEntity<List<AnswerStatistic>> {
-        val statistics = submissionService.getAnswerStatistics(questionId)
-
-        return ResponseEntity.ok(statistics)
-    }
-
-    @GetMapping("/search")
-    fun searchTextResponses(@RequestParam query: String): ResponseEntity<List<OpenUserAnswerResponse>> {
-        val answers = submissionService.searchTextResponses(query)
         val answersResponse = answers.map { submissionMapper.toResponse(it) }
 
         return ResponseEntity.ok(answersResponse)

@@ -10,21 +10,8 @@ import java.time.LocalDateTime
 
 interface ISurveySubmissionService {
 
-    /**
-     * Submit responses to a survey
-     */
-    fun submitSurvey(
-        surveyId: Long,
-        answers: List<AnswerRequest>
-    ): SubmittedSurvey
 
-    /**
-     * Submit by access code
-     */
-    fun submitByAccessCode(
-        accessCode: String,
-        answers: List<AnswerRequest>
-    ): SubmittedSurvey
+    fun submitByAccessCode(accessCode: String, answers: List<AnswerRequest>): SubmittedSurvey
 
     /**
      * Get submission by ID
@@ -35,28 +22,17 @@ interface ISurveySubmissionService {
      * Get all submissions for a survey
      */
     fun getSubmissions(surveyId: Long): List<SubmittedSurvey>
-
+    fun getSubmissionsByAccessCode(accessCode: String): List<SubmittedSurvey>
+    fun getSubmissionsByAccessCodeWithAnswers(accessCode: String): List<SubmittedSurvey>
     /**
      * Get submissions in date range
      */
-    fun getSubmissions(
-        surveyId: Long,
-        startDate: LocalDateTime,
-        endDate: LocalDateTime
-    ): List<SubmittedSurvey>
+    fun getSubmissions(surveyId: Long, startDate: LocalDateTime, endDate: LocalDateTime): List<SubmittedSurvey>
 
     /**
      * Get user answers for a question
      */
     fun getAnswersForQuestion(questionId: Long): List<UserAnswer>
-
-    /**
-     * Get answer statistics for a closed question
-     */
-    fun getAnswerStatistics(questionId: Long): List<AnswerStatistic>
-
-
-    fun searchTextResponses(searchText: String): List<OpenUserAnswer>
 
     /**
      * Get submission summary

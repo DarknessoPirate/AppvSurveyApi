@@ -90,18 +90,6 @@ class QuestionController(
         return ResponseEntity.ok(questionsResponse)
     }
 
-    // TODO : FIX LAZY INIT
-    /*
-    @GetMapping("/shared/search")
-    fun searchSharedQuestions(@RequestParam query: String): ResponseEntity<List<QuestionResponse>> {
-        val questions = questionService.searchSharedQuestions(query)
-        val questionsResponse = questions.map { questionMapper.toResponse(it) }
-
-        return ResponseEntity.ok(questionsResponse)
-    }
-
-     */
-
     @PostMapping("/{id}/make-shared")
     fun makeQuestionShared(@PathVariable id: Long): ResponseEntity<QuestionResponse> {
         val question = questionService.makeQuestionShared(id)
@@ -110,7 +98,6 @@ class QuestionController(
         return ResponseEntity.ok(questionResponse)
     }
 
-    // Survey-specific question operations moved from SurveyController
     @PostMapping("/survey/{surveyId}")
     fun addQuestionToSurvey(@PathVariable surveyId: Long, @Valid @RequestBody request: QuestionRequest): ResponseEntity<QuestionResponse> {
         val question = questionService.addQuestionToSurvey(surveyId, request)

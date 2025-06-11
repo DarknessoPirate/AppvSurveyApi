@@ -14,7 +14,6 @@ import com.darknessopirate.appvsurveyapi.domain.service.IAccessCodeService
 import com.darknessopirate.appvsurveyapi.domain.service.ISurveyService
 import com.darknessopirate.appvsurveyapi.infrastructure.mappers.AccessCodeMapper
 import com.darknessopirate.appvsurveyapi.infrastructure.mappers.SurveyMapper
-import jakarta.persistence.EntityNotFoundException
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
@@ -154,17 +153,11 @@ class SurveyController(
         return ResponseEntity.noContent().build()
     }
 
-    // Update the existing access code endpoint to find by any access code
+
     @GetMapping("/access-code/{accessCode}")
     fun getSurveyByAccessCode(@PathVariable accessCode: String): ResponseEntity<SurveyDetailResponse> {
-        val accessCodeEntity = accessCodeService.validateAccessCode(accessCode)
-            ?: throw EntityNotFoundException("Invalid or expired access code")
 
-        val survey = accessCodeEntity.survey ?: throw EntityNotFoundException("Survey not found")
-
-        // Increment usage count
-        accessCodeService.incrementUsage(accessCodeEntity.id!!)
-
+        val survey = surveyService.findByAccessCode(accessCode)
         val detailedSurveyResponse = surveyMapper.toDetailResponse(survey)
         return ResponseEntity.ok(detailedSurveyResponse)
     }

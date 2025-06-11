@@ -8,19 +8,20 @@ import com.darknessopirate.appvsurveyapi.domain.entity.answer.OpenUserAnswer
 import com.darknessopirate.appvsurveyapi.domain.entity.answer.UserAnswer
 import com.darknessopirate.appvsurveyapi.domain.entity.question.ClosedQuestion
 import com.darknessopirate.appvsurveyapi.domain.entity.question.OpenQuestion
+import com.darknessopirate.appvsurveyapi.domain.entity.survey.AccessCode
 import com.darknessopirate.appvsurveyapi.domain.entity.survey.SubmittedSurvey
 import com.darknessopirate.appvsurveyapi.domain.entity.survey.Survey
 import com.darknessopirate.appvsurveyapi.domain.enums.SelectionType
-import com.darknessopirate.appvsurveyapi.domain.model.AnswerStatistic
 import com.darknessopirate.appvsurveyapi.domain.model.SubmissionSummary
-import com.darknessopirate.appvsurveyapi.domain.repository.question.QuestionAnswerRepository
 import com.darknessopirate.appvsurveyapi.domain.repository.question.QuestionRepository
 import com.darknessopirate.appvsurveyapi.domain.repository.survey.SubmittedSurveyRepository
 import com.darknessopirate.appvsurveyapi.domain.repository.survey.SurveyRepository
 import com.darknessopirate.appvsurveyapi.domain.repository.userAnswer.ClosedUserAnswerRepository
 import com.darknessopirate.appvsurveyapi.domain.repository.userAnswer.OpenUserAnswerRepository
+import com.darknessopirate.appvsurveyapi.domain.service.IAccessCodeService
 import com.darknessopirate.appvsurveyapi.domain.service.ISurveySubmissionService
 import jakarta.persistence.EntityNotFoundException
+import org.hibernate.Hibernate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -34,32 +35,62 @@ class SurveySubmissionServiceImpl(
     private val openUserAnswerRepository: OpenUserAnswerRepository,
     private val closedUserAnswerRepository: ClosedUserAnswerRepository,
     private val questionRepository: QuestionRepository,
-    private val questionAnswerRepository: QuestionAnswerRepository
+    private val accessCodeService: IAccessCodeService
 ) : ISurveySubmissionService {
 
-    /**
-     * Submit responses to a survey
-     */
-    override fun submitSurvey(
-        surveyId: Long,
+    override fun submitByAccessCode(
+        accessCode: String,
         answers: List<AnswerRequest>
+    ): SubmittedSurvey {
+        val accessCodeEntity = accessCodeService.validateAccessCode(accessCode)
+            ?: throw EntityNotFoundException("Invalid or expired access code: $accessCode")
+
+        val survey = surveyRepository.findByIdWithQuestions(accessCodeEntity.survey?.id!!)
+            ?: throw EntityNotFoundException("Survey not found for access code: $accessCode")
+
+        if (!survey.isActive) {
+            throw IllegalStateException("Survey is not active")
+        }
+
+        if (survey.expiresAt != null && survey.expiresAt!!.isBefore(LocalDateTime.now())) {
+            throw IllegalStateException("Survey has expired")
+        }
+
+        // Increment usage count
+        accessCodeEntity.id?.let { accessCodeService.incrementUsage(it) }
+
+        // Pass the access code entity to link it properly
+        return submitSurveyWithAccessCode(survey.id!!, answers, accessCodeEntity)
+    }
+
+    private fun submitSurveyWithAccessCode(
+        surveyId: Long,
+        answers: List<AnswerRequest>,
+        accessCode: AccessCode?
     ): SubmittedSurvey {
         val survey = surveyRepository.findByIdWithQuestions(surveyId)
             ?: throw EntityNotFoundException("Survey not found: $surveyId")
 
-        // Validate survey accepts submissions
-        if (!survey.isActive) {
-            throw IllegalStateException("Survey is not active")
-        }
-        if (survey.expiresAt != null && survey.expiresAt!!.isBefore(LocalDateTime.now())) {
-            throw IllegalStateException("Survey has expired")
+        // For admin/internal use, still validate survey state
+        // (Anonymous access validation happens in submitByAccessCode)
+        if (accessCode == null) {
+            // Only validate for internal/admin usage
+            if (!survey.isActive) {
+                throw IllegalStateException("Survey is not active")
+            }
+            if (survey.expiresAt != null && survey.expiresAt!!.isBefore(LocalDateTime.now())) {
+                throw IllegalStateException("Survey has expired")
+            }
         }
 
         // Validate all required questions are answered
         validateRequiredQuestions(survey, answers)
 
-        // Create submitted survey
-        val submittedSurvey = SubmittedSurvey(survey = survey)
+        // Create submitted survey with access code reference
+        val submittedSurvey = SubmittedSurvey(
+            survey = survey,
+            accessCode = accessCode
+        )
         val savedSubmission = submittedSurveyRepository.save(submittedSurvey)
 
         // Process each answer based on its type
@@ -74,6 +105,7 @@ class SurveySubmissionServiceImpl(
                     }
                     createOpenAnswer(question, answerRequest, savedSubmission)
                 }
+
                 is ClosedAnswerRequest -> {
                     if (question !is ClosedQuestion) {
                         throw IllegalArgumentException("Closed answer provided for non-closed question ${question.id}")
@@ -88,36 +120,36 @@ class SurveySubmissionServiceImpl(
         return submittedSurveyRepository.save(savedSubmission)
     }
 
-    /**
-     * Submit by access code
-     */
-    override fun submitByAccessCode(
-        accessCode: String,
-        answers: List<AnswerRequest>
-    ): SubmittedSurvey {
-        val survey = surveyRepository.findByAccessCodeWithQuestions(accessCode)
-            ?: throw EntityNotFoundException("Survey not found with access code: $accessCode")
-
-        return submitSurvey(survey.id!!, answers)
-    }
-
-    /**
-     * Get submission by ID
-     */
+    // Get submission by ID
     override fun getSubmission(submissionId: Long): SubmittedSurvey? {
-        return submittedSurveyRepository.findByIdWithSurveyAndAnswers(submissionId)
+        val submission = submittedSurveyRepository.findByIdWithSurveyAndAnswers(submissionId)
+            ?: return null
+
+        // Initialize lazy-loaded collections
+        Hibernate.initialize(submission.userAnswers)
+
+        // For each user answer, if it's a closed answer, initialize selected answers
+        submission.userAnswers.forEach { userAnswer ->
+            if (userAnswer is ClosedUserAnswer) {
+                try {
+                    Hibernate.initialize(userAnswer.selectedAnswers)
+                    println("✅ Loaded ${userAnswer.selectedAnswers.size} selected answers for question ${userAnswer.question.id}")
+                } catch (e: Exception) {
+                    println("❌ Failed to load selected answers for question ${userAnswer.question.id}: ${e.message}")
+                }
+            }
+        }
+
+        return submission
     }
 
-    /**
-     * Get all submissions for a survey
-     */
+    // Get all submissions for a survey
     override fun getSubmissions(surveyId: Long): List<SubmittedSurvey> {
         return submittedSurveyRepository.findBySurveyIdWithSurvey(surveyId)
     }
 
-    /**
-     * Get submissions in date range
-     */
+
+    // Get submissions in date range
     override fun getSubmissions(
         surveyId: Long,
         startDate: LocalDateTime,
@@ -127,9 +159,17 @@ class SurveySubmissionServiceImpl(
             .filter { it.submittedAt.isAfter(startDate) && it.submittedAt.isBefore(endDate) }
     }
 
-    /**
-     * Get user answers for a question
-     */
+    override fun getSubmissionsByAccessCode(accessCode: String): List<SubmittedSurvey> {
+        return submittedSurveyRepository.findByAccessCodeWithAnswers(accessCode)
+    }
+
+    override fun getSubmissionsByAccessCodeWithAnswers(accessCode: String): List<SubmittedSurvey> {
+        return submittedSurveyRepository.findByAccessCodeWithAnswers(accessCode)
+    }
+
+    // Get user answers for a question
+
+
     override fun getAnswersForQuestion(questionId: Long): List<UserAnswer> {
         return when (val question = questionRepository.findById(questionId).orElse(null)) {
             is OpenQuestion -> openUserAnswerRepository.findByQuestionId(questionId)
@@ -138,37 +178,6 @@ class SurveySubmissionServiceImpl(
         }
     }
 
-    /**
-     * Get answer statistics for a closed question
-     */
-    override fun getAnswerStatistics(questionId: Long): List<AnswerStatistic> {
-        val question = questionRepository.findById(questionId).orElse(null)
-            ?: throw EntityNotFoundException("Question not found: $questionId")
-
-        if (question !is ClosedQuestion) {
-            throw IllegalArgumentException("Statistics only available for closed questions")
-        }
-
-        val stats = closedUserAnswerRepository.getStatistics(questionId)
-        return stats.map { stat ->
-            AnswerStatistic(
-                answerId = stat[0] as Long,
-                answerText = stat[1] as String,
-                count = (stat[2] as Long).toInt()
-            )
-        }
-    }
-
-    /**
-     * Search text responses
-     */
-    override fun searchTextResponses(searchText: String): List<OpenUserAnswer> {
-        return openUserAnswerRepository.searchByText(searchText)
-    }
-
-    /**
-     * Get submission summary
-     */
     override fun getSubmissionSummary(surveyId: Long): SubmissionSummary {
         val survey = surveyRepository.findById(surveyId).orElseThrow {
             EntityNotFoundException("Survey not found: $surveyId")

@@ -15,6 +15,11 @@ data class SubmittedSurvey(
     @JoinColumn(name = "survey_id")
     val survey: Survey,
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "access_code_id")
+    val accessCode: AccessCode? = null,
+
+
     val submittedAt: LocalDateTime = LocalDateTime.now(),
 
     @OneToMany(mappedBy = "submittedSurvey", cascade = [CascadeType.ALL])

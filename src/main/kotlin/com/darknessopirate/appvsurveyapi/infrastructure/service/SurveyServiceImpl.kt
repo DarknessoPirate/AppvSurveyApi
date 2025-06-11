@@ -32,9 +32,6 @@ class SurveyServiceImpl(
     private val submittedSurveyRepository: SubmittedSurveyRepository,
 ) : ISurveyService {
 
-    /**
-     * Create a new survey
-     */
     override fun createSurvey(
         request: CreateSurveyRequest
     ): Survey {
@@ -42,9 +39,7 @@ class SurveyServiceImpl(
         return surveyRepository.save(surveyEntity)
     }
 
-    /**
-     * Create survey with questions
-     */
+    // Create survey with questions
     override fun createSurveyWithSelectedQuestions(
         request: CreateSurveyWithQuestionsRequest
     ): Survey {
@@ -73,9 +68,7 @@ class SurveyServiceImpl(
     }
 
 
-    /**
-     * Find survey by access code
-     */
+    // Find survey by access code
     override fun findByAccessCode(accessCode: String): Survey {
 
         val accessCodeEntity = accessCodeService.validateAccessCode(accessCode)
@@ -84,8 +77,13 @@ class SurveyServiceImpl(
         val survey = surveyRepository.findByIdWithQuestions(accessCodeEntity.survey?.id!!)
             ?: throw EntityNotFoundException("Survey not found")
 
-        // Increment usage count
-        accessCodeService.incrementUsage(accessCodeEntity.id!!)
+        if (!survey.isActive) {
+            throw IllegalStateException("Survey is not active")
+        }
+
+        if (survey.expiresAt != null && survey.expiresAt!!.isBefore(LocalDateTime.now())) {
+            throw IllegalStateException("Survey has expired")
+        }
 
         // Initialize the lazy loaded answers
         survey.questions.forEach { question ->
@@ -94,12 +92,12 @@ class SurveyServiceImpl(
             }
         }
 
+        Hibernate.initialize(survey.accessCodes)
+
         return survey
     }
 
-    /**
-     * Find survey with all questions and answers
-     */
+    // Find survey with all questions and answers
     override fun findWithQuestions(surveyId: Long): Survey {
         val survey = surveyRepository.findByIdWithQuestions(surveyId)
 
@@ -116,23 +114,13 @@ class SurveyServiceImpl(
         return survey
     }
 
-
-    // TODO: ADD FIND ALL SURVEYS ( ACTIVE + INACTIVE)
-    // TODO: ADD FIND ALL INACTIVE
-    // TODO: CHANGE DEFAULT FROM ACTIVE TO NOT ACTIVE
-    // TODO: CHANGE COPYING LOGIC
-    // TODO: CHANGE ACCESS CODE COPYING LOGIC (CURRENTLY DUPLICATE KEY EXCEPTION - JUST GENERATE NEW)
-    /**
-     * Add question to survey by copying from shared questions
-     */
+    //  Add question to survey by copying from shared questions
     override fun addSharedQuestion(surveyId: Long, sharedQuestionId: Long): Question {
         val maxOrder = getMaxQuestionOrder(surveyId)
         return questionService.copyQuestionToSurvey(sharedQuestionId, surveyId, maxOrder + 1)
     }
 
-    /**
-     * Add new question directly to survey
-     */
+    // Add new question directly to survey
     override fun addOpenQuestion(
         surveyId: Long,
         text: String,
@@ -144,9 +132,7 @@ class SurveyServiceImpl(
         )
     }
 
-    /**
-     * Add new closed question directly to survey
-     */
+    // Add new closed question directly to survey
     override fun addClosedQuestion(
         surveyId: Long,
         text: String,
@@ -160,9 +146,7 @@ class SurveyServiceImpl(
         )
     }
 
-    /**
-     * Remove question from survey
-     */
+    // Remove question from survey
     override fun removeQuestion(surveyId: Long, questionId: Long) {
         val survey = surveyRepository.findByIdWithQuestions(surveyId)
             ?: throw EntityNotFoundException("Survey not found: $surveyId")
@@ -177,9 +161,8 @@ class SurveyServiceImpl(
         reorderQuestions(surveyId)
     }
 
-    /**
-     * Reorder questions in survey
-     */
+    // TODO: Unused?
+    // Reorder questions in survey
     override fun reorderQuestions(surveyId: Long, questionIds: List<Long>?) {
         val survey = surveyRepository.findByIdWithQuestions(surveyId)
 
@@ -192,7 +175,6 @@ class SurveyServiceImpl(
                 survey.questions.find { it.id == questionId }?.displayOrder = index + 1
             }
         } else {
-            // Just fix the ordering
             survey.questions.sortedBy { it.displayOrder }.forEachIndexed { index, question ->
                 question.displayOrder = index + 1
             }
@@ -201,9 +183,7 @@ class SurveyServiceImpl(
         surveyRepository.save(survey)
     }
 
-    /**
-     * Activate/deactivate survey
-     */
+    // Activate/deactivate survey
     override fun toggleActive(surveyId: Long) {
         val survey = surveyRepository.findByIdWithQuestions(surveyId)
             ?: throw EntityNotFoundException("Survey not found with id: $surveyId")
@@ -218,9 +198,7 @@ class SurveyServiceImpl(
 
     }
 
-    /**
-     * Set survey expiration
-     */
+    // Set survey expiration
     override fun setExpiration(surveyId: Long, expiresAt: LocalDateTime?): Survey {
         val survey = surveyRepository.findById(surveyId).orElseThrow {
             EntityNotFoundException("Survey not found: $surveyId")
@@ -231,9 +209,7 @@ class SurveyServiceImpl(
 
 
 
-    /**
-     * Copy survey (with all questions)
-     */
+    // Copy survey (with all questions)
     override fun copySurvey(surveyId: Long, newTitle: String): Survey {
         val originalSurvey = surveyRepository.findByIdWithQuestions(surveyId)
             ?: throw EntityNotFoundException("Survey not found: $surveyId")
@@ -255,9 +231,6 @@ class SurveyServiceImpl(
         return surveyRepository.save(copiedSurvey)
     }
 
-    /**
-     * Get survey statistics
-     */
     override fun getStatistics(surveyId: Long): SurveyStatistics {
         val survey = surveyRepository.findById(surveyId).orElseThrow {
             EntityNotFoundException("Survey not found: $surveyId")
@@ -297,7 +270,6 @@ class SurveyServiceImpl(
         return surveys
     }
 
-
     override fun findActiveSurveys(): List<Survey> {
         val surveys = surveyRepository.findActiveWithQuestions()
         surveys.forEach { survey -> Hibernate.initialize(survey.accessCodes)}
@@ -311,17 +283,13 @@ class SurveyServiceImpl(
         return surveyRepository.findExpiringBetween(now, endDate)
     }
 
-    /**
-     * Check if survey accepts submissions
-     */
+    // Check if survey accepts submissions
     override fun acceptsSubmissions(surveyId: Long): Boolean {
         val survey = surveyRepository.findById(surveyId).orElse(null) ?: return false
         return survey.isActive && (survey.expiresAt == null || survey.expiresAt!!.isAfter(LocalDateTime.now()))
     }
 
-    /**
-     * Delete survey and all related data
-     */
+    // Delete survey and all related data
     override fun deleteSurvey(surveyId: Long) {
         if (!surveyRepository.existsById(surveyId)) {
             throw EntityNotFoundException("Survey not found: $surveyId")

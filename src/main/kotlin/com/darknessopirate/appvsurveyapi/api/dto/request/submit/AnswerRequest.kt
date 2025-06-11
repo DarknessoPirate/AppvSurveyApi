@@ -11,7 +11,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 )
 @JsonSubTypes(
     JsonSubTypes.Type(value = OpenAnswerRequest::class, name = "OPEN"),
-    JsonSubTypes.Type(value = ClosedAnswerRequest::class, name = "CLOSED")
+    JsonSubTypes.Type(value = ClosedAnswerRequest::class, name = "DROPDOWN"),
+    JsonSubTypes.Type(value = ClosedAnswerRequest::class, name = "CHECKBOX")
 )
 sealed class AnswerRequest(
     open val questionId: Long,

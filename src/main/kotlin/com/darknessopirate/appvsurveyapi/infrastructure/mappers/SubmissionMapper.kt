@@ -30,15 +30,15 @@ class SubmissionMapper(private val questionMapper: QuestionMapper) {
 
     fun toResponse(entity: UserAnswer): UserAnswerResponse = when (entity) {
         is OpenUserAnswer -> OpenUserAnswerResponse(
-            id = entity.id!!,
-            questionName = entity.question.text,
+            questionId = entity.question.id!!,
+            questionText = entity.question.text,
             textValue = entity.textValue
         )
         is ClosedUserAnswer -> {
             val closedQuestion = entity.question as ClosedQuestion
             ClosedUserAnswerResponse(
-                id = entity.id!!,
-                questionName = entity.question.text,
+                questionId = entity.question.id!!,
+                questionText = entity.question.text,
                 selectedAnswers = try {
                     entity.selectedAnswers.map { questionMapper.toResponse(it) }
                 } catch (e: LazyInitializationException) {
@@ -51,8 +51,8 @@ class SubmissionMapper(private val questionMapper: QuestionMapper) {
     }
 
     fun toResponse(entity: OpenUserAnswer): OpenUserAnswerResponse = OpenUserAnswerResponse(
-        id = entity.id!!,
-        questionName = entity.question.text,
+        questionId = entity.question.id!!,
+        questionText = entity.question.text,
         textValue = entity.textValue
     )
 
