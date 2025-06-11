@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageNotReadableException
+import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.validation.FieldError
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -23,7 +24,6 @@ class GlobalExceptionHandler {
         val errorResponse = ErrorResponse(
             status = HttpStatus.NOT_FOUND.value(),
             message = ex.message ?: "Resource with given id not found",
-            timestamp = System.currentTimeMillis()
         )
         return ResponseEntity(errorResponse, HttpStatus.NOT_FOUND)
     }
@@ -33,7 +33,6 @@ class GlobalExceptionHandler {
         val errorResponse = ErrorResponse(
             status = HttpStatus.NOT_FOUND.value(),
             message = ex.message ?: "Resource with given id not found",
-            timestamp = System.currentTimeMillis()
         )
         return ResponseEntity(errorResponse, HttpStatus.NOT_FOUND)
     }
@@ -47,7 +46,6 @@ class GlobalExceptionHandler {
         val errorResponse = ErrorResponse(
             status = HttpStatus.BAD_REQUEST.value(),
             message = "Validation failed: $errors",
-            timestamp = System.currentTimeMillis()
         )
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse)
     }
@@ -56,9 +54,17 @@ class GlobalExceptionHandler {
         val errorResponse = ErrorResponse(
             status = HttpStatus.BAD_REQUEST.value(),
             message = ex.message ?: "Invalid operation",
-            timestamp = System.currentTimeMillis()
         )
         return ResponseEntity(errorResponse, HttpStatus.BAD_REQUEST)
+    }
+
+    @ExceptionHandler(BadCredentialsException::class)
+    fun handleBadCredentials(ex: BadCredentialsException): ResponseEntity<ErrorResponse> {
+        val errorResponse = ErrorResponse(
+            message = ex.message ?: "Invalid credentials",
+            status = HttpStatus.UNAUTHORIZED.value(),
+        )
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse)
     }
 
     // when json malformed
@@ -67,7 +73,6 @@ class GlobalExceptionHandler {
         val errorResponse = ErrorResponse(
             status = HttpStatus.BAD_REQUEST.value(),
             message = ex.message ?: "Bad Request",
-            timestamp = System.currentTimeMillis()
         )
 
         return ResponseEntity(errorResponse, HttpStatus.BAD_REQUEST)
@@ -79,7 +84,6 @@ class GlobalExceptionHandler {
         val errorResponse = ErrorResponse(
             status = HttpStatus.INTERNAL_SERVER_ERROR.value(),
             message = "An unexpected error occurred",
-            timestamp = System.currentTimeMillis()
         )
         return ResponseEntity(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR)
     }
@@ -89,7 +93,6 @@ class GlobalExceptionHandler {
         val errorResponse = ErrorResponse(
             status = HttpStatus.INTERNAL_SERVER_ERROR.value(),
             message = ex.message ?: "Failed to generate access code",
-            timestamp = System.currentTimeMillis()
         )
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse)
     }
@@ -99,7 +102,6 @@ class GlobalExceptionHandler {
         val errorResponse = ErrorResponse(
             status = HttpStatus.BAD_REQUEST.value(),
             message = ex.message ?: "Invalid argument",
-            timestamp = System.currentTimeMillis()
         )
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse)
     }
@@ -109,7 +111,6 @@ class GlobalExceptionHandler {
         val errorResponse = ErrorResponse(
             status = HttpStatus.BAD_REQUEST.value(),
             message = ex.message ?: "Invalid operation state",
-            timestamp = System.currentTimeMillis()
         )
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse)
     }

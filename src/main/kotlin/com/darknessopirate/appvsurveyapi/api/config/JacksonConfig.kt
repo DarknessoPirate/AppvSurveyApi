@@ -12,7 +12,7 @@ class JacksonConfig {
     @Bean
     fun objectMapper(builder: Jackson2ObjectMapperBuilder): ObjectMapper {
         val objectMapper = builder.createXmlMapper(false).build<ObjectMapper>()
-        // This is the key: tell Jackson to throw an exception if it finds unknown properties
+        //  tell Jackson to throw an exception if it finds unknown properties
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true)
         return objectMapper
     }
