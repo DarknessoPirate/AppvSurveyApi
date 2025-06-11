@@ -115,9 +115,27 @@ class SurveyServiceImpl(
     }
 
     //  Add question to survey by copying from shared questions
+    @Transactional
     override fun addSharedQuestion(surveyId: Long, sharedQuestionId: Long): Question {
         val maxOrder = getMaxQuestionOrder(surveyId)
-        return questionService.copyQuestionToSurvey(sharedQuestionId, surveyId, maxOrder + 1)
+
+        // Copy the question to the survey
+        questionService.copyQuestionToSurvey(sharedQuestionId, surveyId, maxOrder + 1)
+
+        // Reload the survey to get the newly added question with proper ID
+        val survey = surveyRepository.findByIdWithQuestions(surveyId)
+            ?: throw EntityNotFoundException("Survey not found: $surveyId")
+
+        // Find the newly added question by its display order
+        val newQuestion = survey.questions.find { it.displayOrder == maxOrder + 1 }
+            ?: throw IllegalStateException("Failed to find the newly added question with order ${maxOrder + 1}")
+
+        // Initialize lazy-loaded properties if it's a closed question
+        if (newQuestion is ClosedQuestion) {
+            Hibernate.initialize(newQuestion.possibleAnswers)
+        }
+
+        return newQuestion
     }
 
     // Add new question directly to survey

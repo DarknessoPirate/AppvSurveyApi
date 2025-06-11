@@ -107,10 +107,11 @@ class QuestionController(
     }
 
     @PostMapping("/survey/{surveyId}/shared/{questionId}")
-    fun addSharedQuestionToSurvey(@PathVariable surveyId: Long, @PathVariable questionId: Long): ResponseEntity<Void> {
+    fun addSharedQuestionToSurvey(@PathVariable surveyId: Long, @PathVariable questionId: Long): ResponseEntity<QuestionResponse> {
         val question = surveyService.addSharedQuestion(surveyId, questionId)
+        val questionResponse = questionMapper.toResponse(question)
 
-        return ResponseEntity.ok().build()
+        return ResponseEntity.ok(questionResponse);
     }
 
     @DeleteMapping("/survey/{surveyId}/{questionId}")
