@@ -77,20 +77,6 @@ class AccessCodeServiceImpl(
         return accessCodeRepository.save(accessCode)
     }
 
-
-    // TODO : remove unused later
-    override fun findByCode(code: String): AccessCode {
-        val foundCode = accessCodeRepository.findByCode(code)
-
-        if (foundCode == null) {
-            throw EntityNotFoundException("Access code not found: $code")
-        }
-
-        return foundCode
-    }
-
-
-
     private fun generateRandomCode(): String {
         // Generate a random 8-character alphanumeric code
         val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"

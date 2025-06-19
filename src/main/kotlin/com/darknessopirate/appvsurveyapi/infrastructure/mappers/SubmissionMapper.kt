@@ -6,7 +6,6 @@ import com.darknessopirate.appvsurveyapi.domain.entity.answer.OpenUserAnswer
 import com.darknessopirate.appvsurveyapi.domain.entity.answer.UserAnswer
 import com.darknessopirate.appvsurveyapi.domain.entity.question.ClosedQuestion
 import com.darknessopirate.appvsurveyapi.domain.entity.survey.SubmittedSurvey
-import com.darknessopirate.appvsurveyapi.domain.model.SubmissionSummary
 import org.hibernate.LazyInitializationException
 import org.springframework.stereotype.Component
 
@@ -56,12 +55,4 @@ class SubmissionMapper(private val questionMapper: QuestionMapper) {
         textValue = entity.textValue
     )
 
-    fun toResponse(entity: SubmissionSummary): SubmissionSummaryResponse = SubmissionSummaryResponse(
-        surveyId = entity.surveyId,
-        surveyTitle = entity.surveyTitle,
-        totalSubmissions = entity.totalSubmissions,
-        submissionsLast24Hours = entity.submissionsLast24Hours,
-        submissionsLast7Days = entity.submissionsLast7Days,
-        averagePerDay = entity.averagePerDay
-    )
 }

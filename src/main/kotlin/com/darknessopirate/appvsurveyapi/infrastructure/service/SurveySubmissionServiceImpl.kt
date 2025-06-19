@@ -12,7 +12,6 @@ import com.darknessopirate.appvsurveyapi.domain.entity.survey.AccessCode
 import com.darknessopirate.appvsurveyapi.domain.entity.survey.SubmittedSurvey
 import com.darknessopirate.appvsurveyapi.domain.entity.survey.Survey
 import com.darknessopirate.appvsurveyapi.domain.enums.SelectionType
-import com.darknessopirate.appvsurveyapi.domain.model.SubmissionSummary
 import com.darknessopirate.appvsurveyapi.domain.repository.question.QuestionRepository
 import com.darknessopirate.appvsurveyapi.domain.repository.survey.SubmittedSurveyRepository
 import com.darknessopirate.appvsurveyapi.domain.repository.survey.SurveyRepository
@@ -143,60 +142,8 @@ class SurveySubmissionServiceImpl(
         return submission
     }
 
-    // Get all submissions for a survey
-    override fun getSubmissions(surveyId: Long): List<SubmittedSurvey> {
-        return submittedSurveyRepository.findBySurveyIdWithSurvey(surveyId)
-    }
-
-
-    // Get submissions in date range
-    override fun getSubmissions(
-        surveyId: Long,
-        startDate: LocalDateTime,
-        endDate: LocalDateTime
-    ): List<SubmittedSurvey> {
-        return submittedSurveyRepository.findBySurveyIdWithSurvey(surveyId)
-            .filter { it.submittedAt.isAfter(startDate) && it.submittedAt.isBefore(endDate) }
-    }
-
     override fun getSubmissionsByAccessCode(accessCode: String): List<SubmittedSurvey> {
         return submittedSurveyRepository.findByAccessCodeWithAnswers(accessCode)
-    }
-
-    override fun getSubmissionsByAccessCodeWithAnswers(accessCode: String): List<SubmittedSurvey> {
-        return submittedSurveyRepository.findByAccessCodeWithAnswers(accessCode)
-    }
-
-    // Get user answers for a question
-
-
-    override fun getAnswersForQuestion(questionId: Long): List<UserAnswer> {
-        return when (val question = questionRepository.findById(questionId).orElse(null)) {
-            is OpenQuestion -> openUserAnswerRepository.findByQuestionId(questionId)
-            is ClosedQuestion -> closedUserAnswerRepository.findByQuestionWithSelections(questionId)
-            else -> emptyList()
-        }
-    }
-
-    override fun getSubmissionSummary(surveyId: Long): SubmissionSummary {
-        val survey = surveyRepository.findById(surveyId).orElseThrow {
-            EntityNotFoundException("Survey not found: $surveyId")
-        }
-
-        val submissions = submittedSurveyRepository.findBySurveyId(surveyId)
-        val now = LocalDateTime.now()
-        val last24Hours = submissions.count { it.submittedAt.isAfter(now.minusDays(1)) }
-        val last7Days = submissions.count { it.submittedAt.isAfter(now.minusDays(7)) }
-
-        return SubmissionSummary(
-            surveyId = surveyId,
-            surveyTitle = survey.title,
-            totalSubmissions = submissions.size,
-            submissionsLast24Hours = last24Hours,
-            submissionsLast7Days = last7Days,
-            averagePerDay = if (submissions.isEmpty()) 0.0
-            else submissions.size / ChronoUnit.DAYS.between(survey.createdAt, now).coerceAtLeast(1).toDouble()
-        )
     }
 
     // Helper methods

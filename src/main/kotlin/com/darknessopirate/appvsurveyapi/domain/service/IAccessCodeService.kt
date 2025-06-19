@@ -11,5 +11,4 @@ interface IAccessCodeService {
     fun getAccessCodesBySurvey(surveyId: Long): List<AccessCode>
     fun validateAccessCode(code: String): AccessCode?
     fun incrementUsage(codeId: Long): AccessCode
-    fun findByCode(code: String): AccessCode?
 }

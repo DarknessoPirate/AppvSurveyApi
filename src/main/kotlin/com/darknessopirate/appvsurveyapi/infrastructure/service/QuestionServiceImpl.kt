@@ -121,39 +121,6 @@ class QuestionServiceImpl(
         questionRepository.deleteById(id)
     }
 
-    override fun findById(id: Long): Question {
-        val question = questionRepository.findById(id).orElseThrow {
-            EntityNotFoundException("Question not found with id: $id")
-        }
-
-        // Initialize lazy loaded data
-        if (question is ClosedQuestion) {
-            Hibernate.initialize(question.possibleAnswers)
-        }
-
-        return question
-    }
-
-    override fun addQuestionToSurvey(surveyId: Long, request: QuestionRequest): Question {
-        val survey = surveyRepository.findById(surveyId).orElseThrow {
-            EntityNotFoundException("Survey not found with id: $surveyId")
-        }
-
-        val maxOrder = survey.questions.maxOfOrNull { it.displayOrder } ?: 0
-        val question = questionMapper.toEntity(request)
-        question.displayOrder = maxOrder + 1
-        question.survey = survey // Set the survey relationship explicitly
-
-        // Save the question directly to ensure it gets an ID
-        val savedQuestion = when (question) {
-            is OpenQuestion -> openQuestionRepository.saveAndFlush(question)
-            is ClosedQuestion -> closedQuestionRepository.saveAndFlush(question)
-            else -> questionRepository.saveAndFlush(question)
-        }
-
-        return savedQuestion
-    }
-
     // Copy a shared question to a survey
     override fun copyQuestionToSurvey(questionId: Long, surveyId: Long, displayOrder: Int): Question {
         val originalQuestion = questionRepository.findById(questionId).orElseThrow {
@@ -189,14 +156,6 @@ class QuestionServiceImpl(
         }
 
         return questions
-    }
-
-    override fun findSharedClosedQuestionsWithAnswers(): List<ClosedQuestion> {
-        return closedQuestionRepository.findSharedWithAnswers()
-    }
-
-    override fun findSharedOpenQuestionsWithAnswers(): List<OpenQuestion> {
-        return openQuestionRepository.findShared()
     }
 
     // Create survey-specific question directly (not shared)
@@ -256,23 +215,5 @@ class QuestionServiceImpl(
         surveyRepository.save(survey)
 
         return question
-    }
-
-     // Convert an existing survey question to a shared question
-     override fun makeQuestionShared(questionId: Long): Question {
-        val question = questionRepository.findById(questionId).orElseThrow {
-            EntityNotFoundException("Question not found with id: $questionId")
-        }
-
-        require(!question.isShared) {
-            "Question is already shared"
-        }
-
-        // Create a copy and mark it as shared
-        val sharedQuestion = question.copy()
-        sharedQuestion.isShared = true
-        sharedQuestion.survey = null // Shared questions don't belong to any survey
-
-        return questionRepository.save(sharedQuestion)
     }
 }

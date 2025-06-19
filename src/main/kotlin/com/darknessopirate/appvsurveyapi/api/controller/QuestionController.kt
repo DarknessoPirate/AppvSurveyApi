@@ -59,51 +59,12 @@ class QuestionController(
         return ResponseEntity.noContent().build()
     }
 
-    @GetMapping("/{id}")
-    fun getQuestion(@PathVariable id: Long): ResponseEntity<QuestionResponse> {
-        val question = questionService.findById(id)
-        val questionResponse = questionMapper.toResponse(question)
-        return ResponseEntity.ok(questionResponse)
-    }
-
     @GetMapping("/shared")
     fun getSharedQuestions(): ResponseEntity<List<QuestionResponse>> {
         val questions = questionService.findSharedQuestions()
         val questionsResponse = questions.map { questionMapper.toResponse(it) }
 
         return ResponseEntity.ok(questionsResponse)
-    }
-
-    @GetMapping("/shared/open")
-    fun getSharedOpenQuestions(): ResponseEntity<List<QuestionResponse>> {
-        val questions = questionService.findSharedOpenQuestionsWithAnswers()
-        val questionsResponse = questions.map { questionMapper.toResponse(it) as OpenQuestionResponse }
-
-        return ResponseEntity.ok(questionsResponse)
-    }
-
-    @GetMapping("/shared/closed")
-    fun getSharedClosedQuestions(): ResponseEntity<List<ClosedQuestionResponse>> {
-        val questions = questionService.findSharedClosedQuestionsWithAnswers()
-        val questionsResponse = questions.map { questionMapper.toResponse(it) as ClosedQuestionResponse }
-
-        return ResponseEntity.ok(questionsResponse)
-    }
-
-    @PostMapping("/{id}/make-shared")
-    fun makeQuestionShared(@PathVariable id: Long): ResponseEntity<QuestionResponse> {
-        val question = questionService.makeQuestionShared(id)
-        val questionResponse = questionMapper.toResponse(question)
-
-        return ResponseEntity.ok(questionResponse)
-    }
-
-    @PostMapping("/survey/{surveyId}")
-    fun addQuestionToSurvey(@PathVariable surveyId: Long, @Valid @RequestBody request: QuestionRequest): ResponseEntity<QuestionResponse> {
-        val question = questionService.addQuestionToSurvey(surveyId, request)
-        val questionResponse = questionMapper.toResponse(question)
-
-        return ResponseEntity.ok(questionResponse)
     }
 
     @PostMapping("/survey/{surveyId}/shared/{questionId}")

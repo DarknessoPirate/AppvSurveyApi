@@ -32,13 +32,6 @@ class SurveyServiceImpl(
     private val submittedSurveyRepository: SubmittedSurveyRepository,
 ) : ISurveyService {
 
-    override fun createSurvey(
-        request: CreateSurveyRequest
-    ): Survey {
-        val surveyEntity = surveyMapper.toEntity(request)
-        return surveyRepository.save(surveyEntity)
-    }
-
     // Create survey with questions
     override fun createSurveyWithSelectedQuestions(
         request: CreateSurveyWithQuestionsRequest
@@ -53,20 +46,6 @@ class SurveyServiceImpl(
 
         return surveyRepository.save(survey)
     }
-
-    override fun updateSurvey(id: Long, request: CreateSurveyRequest): Survey {
-        val survey = surveyRepository.findByIdWithQuestions(id)
-
-        if(survey == null)
-            throw EntityNotFoundException("Survey not found with id: $id")
-
-        survey.title = request.title
-        survey.description = request.description ?: survey.description
-        survey.expiresAt = request.expiresAt ?: survey.expiresAt
-
-        return surveyRepository.save(survey)
-    }
-
 
     // Find survey by access code
     override fun findByAccessCode(accessCode: String): Survey {
@@ -138,32 +117,6 @@ class SurveyServiceImpl(
         return newQuestion
     }
 
-    // Add new question directly to survey
-    override fun addOpenQuestion(
-        surveyId: Long,
-        text: String,
-        required: Boolean
-    ): OpenQuestion {
-        val maxOrder = getMaxQuestionOrder(surveyId)
-        return questionService.createSurveySpecificOpenQuestion(
-            surveyId, text, required, maxOrder + 1
-        )
-    }
-
-    // Add new closed question directly to survey
-    override fun addClosedQuestion(
-        surveyId: Long,
-        text: String,
-        required: Boolean,
-        selectionType: SelectionType,
-        possibleAnswers: List<String>
-    ): ClosedQuestion {
-        val maxOrder = getMaxQuestionOrder(surveyId)
-        return questionService.createSurveySpecificClosedQuestion(
-            surveyId, text, required, maxOrder + 1, selectionType, possibleAnswers
-        )
-    }
-
     // Remove question from survey
     override fun removeQuestion(surveyId: Long, questionId: Long) {
         val survey = surveyRepository.findByIdWithQuestions(surveyId)
@@ -179,7 +132,6 @@ class SurveyServiceImpl(
         reorderQuestions(surveyId)
     }
 
-    // TODO: Unused?
     // Reorder questions in survey
     override fun reorderQuestions(surveyId: Long, questionIds: List<Long>?) {
         val survey = surveyRepository.findByIdWithQuestions(surveyId)
@@ -215,17 +167,6 @@ class SurveyServiceImpl(
         surveyRepository.save(survey)
 
     }
-
-    // Set survey expiration
-    override fun setExpiration(surveyId: Long, expiresAt: LocalDateTime?): Survey {
-        val survey = surveyRepository.findById(surveyId).orElseThrow {
-            EntityNotFoundException("Survey not found: $surveyId")
-        }
-        survey.expiresAt = expiresAt
-        return surveyRepository.save(survey)
-    }
-
-
 
     // Copy survey (with all questions)
     override fun copySurvey(surveyId: Long, newTitle: String): Survey {
@@ -287,26 +228,6 @@ class SurveyServiceImpl(
         surveys.forEach { survey -> Hibernate.initialize(survey.accessCodes)}
         return surveys
     }
-
-    override fun findActiveSurveys(): List<Survey> {
-        val surveys = surveyRepository.findActiveWithQuestions()
-        surveys.forEach { survey -> Hibernate.initialize(survey.accessCodes)}
-        return surveys
-    }
-
-
-    override fun findExpiringSoon(days: Int): List<Survey> {
-        val now = LocalDateTime.now()
-        val endDate = now.plusDays(days.toLong())
-        return surveyRepository.findExpiringBetween(now, endDate)
-    }
-
-    // Check if survey accepts submissions
-    override fun acceptsSubmissions(surveyId: Long): Boolean {
-        val survey = surveyRepository.findById(surveyId).orElse(null) ?: return false
-        return survey.isActive && (survey.expiresAt == null || survey.expiresAt!!.isAfter(LocalDateTime.now()))
-    }
-
     // Delete survey and all related data
     override fun deleteSurvey(surveyId: Long) {
         if (!surveyRepository.existsById(surveyId)) {

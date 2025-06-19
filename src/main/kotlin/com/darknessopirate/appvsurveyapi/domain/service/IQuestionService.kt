@@ -15,14 +15,8 @@ interface IQuestionService {
     fun updateQuestion(id: Long, request: QuestionRequest): Question
     fun duplicateQuestion(id: Long): Question
     fun deleteQuestion(id: Long)
-    fun findById(id: Long): Question
-    // todo: move to survey ?
-    fun addQuestionToSurvey(surveyId: Long, request: QuestionRequest): Question
     fun copyQuestionToSurvey(questionId: Long, surveyId: Long, displayOrder: Int): Question
     fun findSharedQuestions(): List<Question>
-
-    fun findSharedClosedQuestionsWithAnswers(): List<ClosedQuestion>
-    fun findSharedOpenQuestionsWithAnswers(): List<OpenQuestion>
 
     // TODO: remove?
     fun createSurveySpecificOpenQuestion(
@@ -43,5 +37,4 @@ interface IQuestionService {
     ): ClosedQuestion
 
 
-    fun makeQuestionShared(questionId: Long): Question
 }

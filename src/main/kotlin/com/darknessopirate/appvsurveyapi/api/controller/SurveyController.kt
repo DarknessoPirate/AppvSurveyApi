@@ -29,14 +29,6 @@ class SurveyController(
     private val accessCodeMapper: AccessCodeMapper,
 ) {
 
-    @PostMapping
-    fun createSurvey(@Valid @RequestBody request: CreateSurveyRequest): ResponseEntity<SurveyResponse> {
-        val survey = surveyService.createSurvey(request)
-        val createdSurvey = surveyMapper.toResponse(survey)
-
-        return ResponseEntity.ok(createdSurvey)
-    }
-
     @PostMapping("/with-questions")
     fun createSurveyWithQuestions(@Valid @RequestBody request: CreateSurveyWithQuestionsRequest): ResponseEntity<SurveyDetailResponse> {
         val survey = surveyService.createSurveyWithSelectedQuestions(request)
@@ -62,29 +54,6 @@ class SurveyController(
         return ResponseEntity.ok(response)
     }
 
-    @GetMapping
-    fun getActiveSurveys(): ResponseEntity<List<SurveyResponse>> {
-        val activeSurveys = surveyService.findActiveSurveys()
-        val response = activeSurveys.map { surveyMapper.toResponse(it) }
-
-        return ResponseEntity.ok(response)
-    }
-
-    @GetMapping("/expiring")
-    fun getExpiringSurveys(@RequestParam(defaultValue = "7") days: Int): ResponseEntity<List<SurveyResponse>> {
-        val surveys = surveyService.findExpiringSoon(days)
-        val response = surveys.map { surveyMapper.toResponse(it) }
-
-        return ResponseEntity.ok(response)
-    }
-
-    @PutMapping("/{id}")
-    fun updateSurvey(@PathVariable id: Long, @Valid @RequestBody request: CreateSurveyRequest): ResponseEntity<SurveyResponse> {
-        val updatedSurvey = surveyService.updateSurvey(id, request)
-        val updatedSurveyResponse = surveyMapper.toResponse(updatedSurvey)
-
-        return ResponseEntity.ok(updatedSurveyResponse)
-    }
 
     @PostMapping("/{id}/copy")
     fun copySurvey(@PathVariable id: Long, @Valid @RequestBody request: CopySurveyRequest): ResponseEntity<SurveyResponse> {
