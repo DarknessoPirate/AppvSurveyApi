@@ -12,7 +12,7 @@ import jakarta.persistence.Table
 class OpenUserAnswer(
     submittedSurvey: SubmittedSurvey? = null,
     question: Question,
-    var textValue: String = "" // No longer nullable!
+    var textValue: String = ""
 ) : UserAnswer(
     submittedSurvey = submittedSurvey,
     question = question

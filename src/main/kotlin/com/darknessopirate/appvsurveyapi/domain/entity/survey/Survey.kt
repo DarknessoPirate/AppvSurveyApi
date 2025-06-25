@@ -2,6 +2,7 @@ package com.darknessopirate.appvsurveyapi.domain.entity.survey
 
 import com.darknessopirate.appvsurveyapi.domain.entity.question.Question
 import jakarta.persistence.*
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Entity
@@ -19,7 +20,7 @@ data class Survey(
     val createdAt: LocalDateTime = LocalDateTime.now(),
 
     @Column(name = "expires_at")
-    var expiresAt: LocalDateTime? = null,
+    var expiresAt: LocalDate? = null,
 
     @Column(name = "is_active")
     var isActive: Boolean = true,

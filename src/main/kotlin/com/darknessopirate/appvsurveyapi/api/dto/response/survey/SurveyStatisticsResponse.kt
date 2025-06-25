@@ -1,5 +1,6 @@
 package com.darknessopirate.appvsurveyapi.api.dto.response.survey
 
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 data class SurveyStatisticsResponse(
@@ -8,6 +9,6 @@ data class SurveyStatisticsResponse(
     val totalSubmissions: Int,
     val questionCounts: Map<String, Int>,
     val isActive: Boolean,
-    val expiresAt: LocalDateTime?,
+    val expiresAt: LocalDate?,
     val createdAt: LocalDateTime
 )

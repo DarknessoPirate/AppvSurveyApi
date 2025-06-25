@@ -11,7 +11,7 @@ data class QuestionAnswer(
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "question_id")
-    var question: ClosedQuestion? = null, // Now specifically typed
+    var question: ClosedQuestion? = null,
 
     var text: String,
 

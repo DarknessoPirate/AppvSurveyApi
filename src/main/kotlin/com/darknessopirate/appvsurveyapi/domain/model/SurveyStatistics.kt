@@ -1,5 +1,6 @@
 package com.darknessopirate.appvsurveyapi.domain.model
 
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 data class SurveyStatistics(
@@ -8,6 +9,6 @@ data class SurveyStatistics(
     val totalSubmissions: Int,
     val questionCounts: Map<String, Int>, // question type -> count
     val isActive: Boolean,
-    val expiresAt: LocalDateTime?,
+    val expiresAt: LocalDate?,
     val createdAt: LocalDateTime
 )

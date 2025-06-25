@@ -23,6 +23,7 @@ import jakarta.persistence.EntityNotFoundException
 import org.hibernate.Hibernate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
@@ -51,7 +52,7 @@ class SurveySubmissionServiceImpl(
             throw IllegalStateException("Survey is not active")
         }
 
-        if (survey.expiresAt != null && survey.expiresAt!!.isBefore(LocalDateTime.now())) {
+        if (survey.expiresAt != null && survey.expiresAt!!.isBefore(LocalDate.now())) {
             throw IllegalStateException("Survey has expired")
         }
 
@@ -77,7 +78,7 @@ class SurveySubmissionServiceImpl(
             if (!survey.isActive) {
                 throw IllegalStateException("Survey is not active")
             }
-            if (survey.expiresAt != null && survey.expiresAt!!.isBefore(LocalDateTime.now())) {
+            if (survey.expiresAt != null && survey.expiresAt!!.isBefore(LocalDate.now())) {
                 throw IllegalStateException("Survey has expired")
             }
         }

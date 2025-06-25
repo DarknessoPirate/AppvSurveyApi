@@ -19,7 +19,6 @@ spring:
         # allow data.sql to run after tables are created/updated
         defer-datasource-initialization: true
 
-
 # Admin user configuration
 app:
     admin:
