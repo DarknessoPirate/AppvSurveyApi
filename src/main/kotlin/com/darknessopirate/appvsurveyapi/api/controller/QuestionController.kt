@@ -1,5 +1,6 @@
 package com.darknessopirate.appvsurveyapi.api.controller
 
+import com.darknessopirate.appvsurveyapi.api.dto.PaginatedResponse
 import com.darknessopirate.appvsurveyapi.api.dto.request.question.ClosedQuestionRequest
 import com.darknessopirate.appvsurveyapi.api.dto.request.question.OpenQuestionRequest
 import com.darknessopirate.appvsurveyapi.api.dto.request.question.QuestionRequest
@@ -66,6 +67,18 @@ class QuestionController(
 
         return ResponseEntity.ok(questionsResponse)
     }
+
+
+    @GetMapping("/shared/page")
+    fun getSharedQuestionsPage(
+        @RequestParam(defaultValue = "0") pageNumber: Int,
+        @RequestParam(defaultValue = "10") pageSize: Int,
+        @RequestParam(defaultValue = "false") sortFromOldest: Boolean
+    ): ResponseEntity<PaginatedResponse<QuestionResponse>> {
+        val pageResponse = questionService.findSharedQuestionsPage(pageNumber, pageSize, sortFromOldest)
+        return ResponseEntity.ok(pageResponse)
+    }
+
 
     @PostMapping("/survey/{surveyId}/shared/{questionId}")
     fun addSharedQuestionToSurvey(@PathVariable surveyId: Long, @PathVariable questionId: Long): ResponseEntity<QuestionResponse> {

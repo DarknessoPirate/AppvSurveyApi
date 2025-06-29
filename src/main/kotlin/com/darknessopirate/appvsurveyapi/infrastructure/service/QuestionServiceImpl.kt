@@ -1,7 +1,9 @@
 package com.darknessopirate.appvsurveyapi.infrastructure.service
+import com.darknessopirate.appvsurveyapi.api.dto.PaginatedResponse
 import com.darknessopirate.appvsurveyapi.api.dto.request.question.ClosedQuestionRequest
 import com.darknessopirate.appvsurveyapi.api.dto.request.question.OpenQuestionRequest
 import com.darknessopirate.appvsurveyapi.api.dto.request.question.QuestionRequest
+import com.darknessopirate.appvsurveyapi.api.dto.response.question.QuestionResponse
 import com.darknessopirate.appvsurveyapi.domain.entity.question.ClosedQuestion
 import com.darknessopirate.appvsurveyapi.domain.entity.question.OpenQuestion
 import com.darknessopirate.appvsurveyapi.domain.entity.question.Question
@@ -16,6 +18,8 @@ import com.darknessopirate.appvsurveyapi.domain.service.IQuestionService
 import com.darknessopirate.appvsurveyapi.infrastructure.mappers.QuestionMapper
 import jakarta.persistence.EntityNotFoundException
 import org.hibernate.Hibernate
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -33,6 +37,7 @@ class QuestionServiceImpl(
     override fun createSharedOpenQuestion(request: OpenQuestionRequest): OpenQuestion {
         val question = OpenQuestion(
             text = request.text,
+            description = request.description,
             required = request.required,
             isShared = true
         )
@@ -43,6 +48,7 @@ class QuestionServiceImpl(
     override fun createSharedClosedQuestion(request: ClosedQuestionRequest): ClosedQuestion {
         val question = ClosedQuestion(
             text = request.text,
+            description = request.description,
             required = request.required,
             isShared = true,
             selectionType = request.selectionType
@@ -70,6 +76,7 @@ class QuestionServiceImpl(
                     throw IllegalArgumentException("Cannot change question type")
                 }
                 existingQuestion.text = request.text
+                existingQuestion.description = request.description
                 existingQuestion.required = request.required
             }
             is ClosedQuestionRequest -> {
@@ -77,6 +84,7 @@ class QuestionServiceImpl(
                     throw IllegalArgumentException("Cannot change question type")
                 }
                 existingQuestion.text = request.text
+                existingQuestion.description = request.description
                 existingQuestion.required = request.required
                 existingQuestion.selectionType = request.selectionType
 
@@ -158,10 +166,26 @@ class QuestionServiceImpl(
         return questions
     }
 
+    override fun findSharedQuestionsPage(pageNumber: Int, pageSize: Int, sortFromOldest: Boolean): PaginatedResponse<QuestionResponse>
+    {
+        val sortDirection = if (sortFromOldest) {
+            Sort.by("id").ascending()
+        } else {
+            Sort.by("id").descending()
+        }
+
+        val pageable = PageRequest.of(pageNumber, pageSize, sortDirection)
+
+        val page = questionRepository.findSharedPage(pageable)
+        return questionMapper.toPageResponse(page)
+    }
+
+
     // Create survey-specific question directly (not shared)
     override fun createSurveySpecificOpenQuestion(
         surveyId: Long,
         text: String,
+        description: String?,
         required: Boolean,
         displayOrder: Int
     ): OpenQuestion {
@@ -171,6 +195,7 @@ class QuestionServiceImpl(
 
         val question = OpenQuestion(
             text = text,
+            description = description,
             required = required,
             displayOrder = displayOrder,
             isShared = false
@@ -186,6 +211,7 @@ class QuestionServiceImpl(
     override fun createSurveySpecificClosedQuestion(
         surveyId: Long,
         text: String,
+        description: String?,
         required: Boolean,
         displayOrder: Int,
         selectionType: SelectionType,
@@ -197,6 +223,7 @@ class QuestionServiceImpl(
 
         val question = ClosedQuestion(
             text = text,
+            description = description,
             required = required,
             displayOrder = displayOrder,
             isShared = false,
