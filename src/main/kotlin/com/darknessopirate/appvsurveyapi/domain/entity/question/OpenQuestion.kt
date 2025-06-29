@@ -12,11 +12,13 @@ import jakarta.persistence.Table
 @DiscriminatorValue("OPEN")
 class OpenQuestion(
     text: String,
+    description: String?,
     required: Boolean = false,
     displayOrder: Int = 0,
     isShared: Boolean = false
 ) : Question(
     text = text,
+    description = description,
     required = required,
     displayOrder = displayOrder,
     isShared = isShared
@@ -31,6 +33,7 @@ class OpenQuestion(
     override fun copy(): OpenQuestion {
         return OpenQuestion(
             text = this.text,
+            description = this.description,
             required = this.required,
             displayOrder = this.displayOrder,
             isShared = false // Copied questions are never shared

@@ -7,11 +7,13 @@ import jakarta.validation.constraints.NotBlank
 data class ClosedQuestionRequest(
     @field:NotBlank(message = "Question text is required")
     override val text: String,
+    override val description: String?,
     override val required: Boolean = false,
     val selectionType: SelectionType,
     val possibleAnswers: List<String>
 ) : QuestionRequest(
     text,
+    description,
     required,
     when(selectionType) {
         SelectionType.SINGLE -> QuestionType.DROPDOWN

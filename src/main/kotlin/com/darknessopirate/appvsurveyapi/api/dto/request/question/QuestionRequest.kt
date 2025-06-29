@@ -16,6 +16,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 )
 sealed class QuestionRequest(
     open val text: String,
+    open val description: String?,
     open val required: Boolean = false,
     open val questionType: QuestionType
 )

@@ -3,10 +3,11 @@ package com.darknessopirate.appvsurveyapi.api.dto.response.question
 import com.darknessopirate.appvsurveyapi.domain.enums.QuestionType
 
 sealed class QuestionResponse(
-    val id: Long,
-    val text: String,
-    val required: Boolean,
-    val displayOrder: Int,
-    val isShared: Boolean,
-    val type: QuestionType
+    open val id: Long,
+    open val text: String,
+    open val description: String?,
+    open val required: Boolean,
+    open val displayOrder: Int,
+    open val isShared: Boolean,
+    open val type: QuestionType
 )

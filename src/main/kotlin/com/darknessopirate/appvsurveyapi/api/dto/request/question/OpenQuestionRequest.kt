@@ -6,5 +6,6 @@ import jakarta.validation.constraints.NotBlank
 data class OpenQuestionRequest(
     @field:NotBlank(message = "Question text is required")
     override val text: String,
+    override val description: String?,
     override val required: Boolean = false
-) : QuestionRequest(text, required, QuestionType.OPEN)
+) : QuestionRequest(text, description,required, QuestionType.OPEN)

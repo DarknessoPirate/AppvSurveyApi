@@ -11,6 +11,7 @@ import jakarta.persistence.*
 @DiscriminatorValue("CLOSED")
 class ClosedQuestion(
     text: String,
+    description: String?,
     required: Boolean = false,
     displayOrder: Int = 0,
     isShared: Boolean = false,
@@ -22,6 +23,7 @@ class ClosedQuestion(
     val possibleAnswers: MutableList<QuestionAnswer> = mutableListOf()
 ) : Question(
     text = text,
+    description = description,
     required = required,
     displayOrder = displayOrder,
     isShared = isShared
@@ -36,6 +38,7 @@ class ClosedQuestion(
     override fun copy(): ClosedQuestion {
         val copiedQuestion = ClosedQuestion(
             text = this.text,
+            description = this.description,
             required = this.required,
             displayOrder = this.displayOrder,
             isShared = false, // Copied questions are never shared

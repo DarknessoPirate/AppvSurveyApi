@@ -20,6 +20,8 @@ abstract class Question(
 
     var text: String,
 
+    var description: String? = null,
+
     var required: Boolean = false,
 
     var displayOrder: Int = 0,

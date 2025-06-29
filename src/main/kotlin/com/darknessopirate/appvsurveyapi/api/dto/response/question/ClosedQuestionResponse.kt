@@ -4,19 +4,21 @@ import com.darknessopirate.appvsurveyapi.domain.enums.QuestionType
 import com.darknessopirate.appvsurveyapi.domain.enums.SelectionType
 
 data class ClosedQuestionResponse(
-    val questionId: Long,
-    val questionText: String,
-    val isRequired: Boolean,
-    val order: Int,
-    val shared: Boolean,
+    override val id: Long,
+    override val text: String,
+    override val description: String?,
+    override val required: Boolean,
+    override val displayOrder: Int,
+    override val isShared: Boolean,
     val selectionType: SelectionType,
     val possibleAnswers: List<QuestionAnswerResponse>
 ) : QuestionResponse(
-    questionId,
-    questionText,
-    isRequired,
-    order,
-    shared,
+    id,
+    text,
+    description,
+    required,
+    displayOrder,
+    isShared,
     when(selectionType) {
         SelectionType.SINGLE -> QuestionType.DROPDOWN
         SelectionType.MULTIPLE -> QuestionType.CHECKBOX
