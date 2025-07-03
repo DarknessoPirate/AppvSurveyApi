@@ -1,14 +1,9 @@
 package com.darknessopirate.appvsurveyapi.domain.service
 
-import com.darknessopirate.appvsurveyapi.api.dto.request.survey.CreateSurveyRequest
 import com.darknessopirate.appvsurveyapi.api.dto.request.survey.CreateSurveyWithQuestionsRequest
-import com.darknessopirate.appvsurveyapi.domain.entity.question.ClosedQuestion
-import com.darknessopirate.appvsurveyapi.domain.entity.question.OpenQuestion
 import com.darknessopirate.appvsurveyapi.domain.entity.question.Question
 import com.darknessopirate.appvsurveyapi.domain.entity.survey.Survey
-import com.darknessopirate.appvsurveyapi.domain.enums.SelectionType
-import com.darknessopirate.appvsurveyapi.domain.model.SurveyStatistics
-import java.time.LocalDateTime
+import com.darknessopirate.appvsurveyapi.domain.model.QuestionStatistic
 
 interface ISurveyService {
 
@@ -27,7 +22,6 @@ interface ISurveyService {
     // Copy survey (with all questions)
     fun copySurvey(surveyId: Long, newTitle: String): Survey
 
-    fun getStatistics(surveyId: Long): SurveyStatistics
     fun findAllSurveys(): List<Survey>
     // Delete survey and all related data
     fun deleteSurvey(surveyId: Long)

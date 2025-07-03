@@ -25,7 +25,7 @@ class SecurityConfig(
             .authorizeHttpRequests { authorize ->
                 authorize
                     // Swagger UI and API docs
-                    .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/api-docs/**").permitAll()
+                    .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/api/questions/shared/page", "/api-docs/**").permitAll()
 
                     // Authentication endpoints
                     .requestMatchers("/api/auth/**").permitAll()

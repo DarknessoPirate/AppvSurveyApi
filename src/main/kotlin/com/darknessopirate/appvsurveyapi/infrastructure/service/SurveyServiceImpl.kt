@@ -1,14 +1,10 @@
 package com.darknessopirate.appvsurveyapi.infrastructure.service
-import com.darknessopirate.appvsurveyapi.api.dto.request.survey.CreateSurveyRequest
 import com.darknessopirate.appvsurveyapi.api.dto.request.survey.CreateSurveyWithQuestionsRequest
 import com.darknessopirate.appvsurveyapi.domain.entity.question.ClosedQuestion
-import com.darknessopirate.appvsurveyapi.domain.entity.question.OpenQuestion
 import com.darknessopirate.appvsurveyapi.domain.entity.question.Question
 import com.darknessopirate.appvsurveyapi.domain.entity.survey.Survey
-import com.darknessopirate.appvsurveyapi.domain.enums.SelectionType
-import com.darknessopirate.appvsurveyapi.domain.exception.AccessCodeGenerationException
 import com.darknessopirate.appvsurveyapi.domain.exception.InvalidOperationException
-import com.darknessopirate.appvsurveyapi.domain.model.SurveyStatistics
+import com.darknessopirate.appvsurveyapi.domain.model.QuestionStatistic
 import com.darknessopirate.appvsurveyapi.domain.repository.survey.SubmittedSurveyRepository
 import com.darknessopirate.appvsurveyapi.domain.repository.survey.SurveyRepository
 import com.darknessopirate.appvsurveyapi.domain.service.IAccessCodeService
@@ -20,8 +16,6 @@ import org.hibernate.Hibernate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
-import java.time.LocalDateTime
-import java.util.*
 
 @Service
 @Transactional
@@ -191,38 +185,6 @@ class SurveyServiceImpl(
         return surveyRepository.save(copiedSurvey)
     }
 
-    override fun getStatistics(surveyId: Long): SurveyStatistics {
-        val survey = surveyRepository.findById(surveyId).orElseThrow {
-            EntityNotFoundException("Survey not found: $surveyId")
-        }
-
-        val submissions = submittedSurveyRepository.findBySurveyId(surveyId)
-        val questionCount = surveyRepository.countQuestionsByType(surveyId)
-
-        // Map ugly class names to readable question types
-        val readableQuestionCounts = questionCount.associate { row ->
-            val className = row[0].toString()
-            val count = (row[1] as Long).toInt()
-
-            val readableType = when {
-                className.contains("OpenQuestion") -> "OPEN"
-                className.contains("ClosedQuestion") -> "CLOSED"
-                else -> className.substringAfterLast(".") // fallback to just class name
-            }
-
-            readableType to count
-        }
-
-        return SurveyStatistics(
-            surveyId = surveyId,
-            title = survey.title,
-            totalSubmissions = submissions.size,
-            questionCounts = readableQuestionCounts,
-            isActive = survey.isActive,
-            expiresAt = survey.expiresAt,
-            createdAt = survey.createdAt
-        )
-    }
 
     override fun findAllSurveys(): List<Survey> {
         val surveys = surveyRepository.findAllWithQuestions()

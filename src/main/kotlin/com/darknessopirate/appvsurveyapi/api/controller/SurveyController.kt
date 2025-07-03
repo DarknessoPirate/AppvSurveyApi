@@ -63,14 +63,6 @@ class SurveyController(
         return ResponseEntity.ok(copiedSurveyResponse)
     }
 
-    @GetMapping("/{id}/statistics")
-    fun getSurveyStatistics(@PathVariable id: Long): ResponseEntity<SurveyStatisticsResponse> {
-        val stats = surveyService.getStatistics(id)
-        val statisticsResponse = surveyMapper.toResponse(stats)
-
-        return ResponseEntity.ok(statisticsResponse)
-    }
-
     @PatchMapping("/{id}/active")
     fun toggleActive(@PathVariable id: Long): ResponseEntity<Unit> {
         surveyService.toggleActive(id)

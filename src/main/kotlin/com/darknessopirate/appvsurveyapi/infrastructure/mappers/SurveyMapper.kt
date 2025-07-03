@@ -6,7 +6,7 @@ import com.darknessopirate.appvsurveyapi.api.dto.response.survey.SurveyDetailRes
 import com.darknessopirate.appvsurveyapi.api.dto.response.survey.SurveyResponse
 import com.darknessopirate.appvsurveyapi.api.dto.response.survey.SurveyStatisticsResponse
 import com.darknessopirate.appvsurveyapi.domain.entity.survey.Survey
-import com.darknessopirate.appvsurveyapi.domain.model.SurveyStatistics
+import com.darknessopirate.appvsurveyapi.domain.model.QuestionStatistic
 import org.springframework.stereotype.Component
 
 @Component
@@ -62,13 +62,4 @@ class SurveyMapper(private val questionMapper: QuestionMapper, private val acces
         questions = entity.questions.map { questionMapper.toResponse(it) }
     )
 
-    fun toResponse(entity: SurveyStatistics): SurveyStatisticsResponse = SurveyStatisticsResponse(
-        surveyId = entity.surveyId,
-        title = entity.title,
-        totalSubmissions = entity.totalSubmissions,
-        questionCounts = entity.questionCounts,
-        isActive = entity.isActive,
-        expiresAt = entity.expiresAt,
-        createdAt = entity.createdAt
-    )
 }
