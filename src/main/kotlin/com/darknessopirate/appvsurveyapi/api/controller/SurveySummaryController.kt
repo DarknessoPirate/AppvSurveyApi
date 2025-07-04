@@ -12,13 +12,13 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/api/surveys")
+@RequestMapping("/api/summary")
 @Validated
 class SurveySummaryController(
     private val surveySummaryService: ISurveySummaryService
 ) {
 
-    @PostMapping("/{id}/summary-password")
+    @PostMapping("/set-password/{id}")
     fun setSummaryPassword(
         @PathVariable id: Long,
         @Valid @RequestBody request: SetSummaryPasswordRequest
@@ -34,7 +34,7 @@ class SurveySummaryController(
         return ResponseEntity.ok(response)
     }
 
-    @GetMapping("/{id}/summary-password")
+    @GetMapping("/get-password/{id}")
     fun getSummaryPassword(@PathVariable id: Long): ResponseEntity<SummaryPasswordResponse> {
         val passwordEntity = surveySummaryService.getSummaryPassword(id)
 
@@ -52,14 +52,15 @@ class SurveySummaryController(
         }
     }
 
-    @GetMapping("/{id}/summary-password/exists")
+    @GetMapping("/password-exists/{id}")
     fun checkPasswordExists(@PathVariable id: Long): ResponseEntity<PasswordExistsResponse> {
         val exists = surveySummaryService.passwordExists(id)
         val response = PasswordExistsResponse(exists = exists)
         return ResponseEntity.ok(response)
     }
 
-    @PostMapping("/{id}/summary")
+    // TODO: MAKE THIS ANONYMOUS
+    @PostMapping("/{id}")
     fun getSurveyStatistics(
         @PathVariable id: Long,
         @Valid @RequestBody request: GetSummaryRequest
@@ -74,8 +75,9 @@ class SurveySummaryController(
         }
     }
 
-    // Optional: Admin endpoint to get statistics without password TODO: ensure auth works here
-    @GetMapping("/{id}/summary/admin")
+    // Optional: Admin endpoint to get statistics without password
+    // TODO: ensure jwt auth works here
+    @GetMapping("/admin/{id}")
     fun getSurveyStatisticsAdmin(@PathVariable id: Long): ResponseEntity<SurveyStatisticsResponse> {
         return try {
             val statistics = surveySummaryService.generateSurveyStatistics(id)

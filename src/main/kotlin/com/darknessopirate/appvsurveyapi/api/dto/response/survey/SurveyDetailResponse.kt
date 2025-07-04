@@ -13,5 +13,6 @@ data class SurveyDetailResponse(
     val expiresAt: LocalDate?,
     val isActive: Boolean,
     val accessCodes: List<AccessCodeResponse>,
-    val questions: List<QuestionResponse>
+    val questions: List<QuestionResponse>,
+    val hasSummaryPassword: Boolean
 )

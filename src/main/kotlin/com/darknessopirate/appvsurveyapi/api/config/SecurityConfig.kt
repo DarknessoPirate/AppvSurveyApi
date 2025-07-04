@@ -25,14 +25,15 @@ class SecurityConfig(
             .authorizeHttpRequests { authorize ->
                 authorize
                     // Swagger UI and API docs
-                    .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/api/questions/shared/page", "/api-docs/**").permitAll()
+                    .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/api-docs/**").permitAll()
 
                     // Authentication endpoints
                     .requestMatchers("/api/auth/**").permitAll()
 
                     // Public survey endpoints (anonymous access for survey submission)
-                    .requestMatchers("POST", "/api/submissions/access-code").permitAll()
-                    .requestMatchers("GET", "/api/surveys/access-code/**").permitAll()
+                    .requestMatchers("POST", "/api/summary/{id:\\d+}").permitAll() // get summary with password for anonymous users
+                    .requestMatchers("POST", "/api/submissions/access-code").permitAll() // submit survey with access code for anonymous users
+                    .requestMatchers("GET", "/api/surveys/access-code/**").permitAll() // get survey by access code for anonymous users
 
                     // All other API endpoints require ADMIN role
                     .requestMatchers("/api/**").hasRole("ADMIN")
@@ -55,7 +56,7 @@ class SecurityConfig(
 
         // Allow specific origins
         configuration.allowedOrigins = listOf(
-            "http://localhost:4200",    // Your Angular dev server
+            "http://localhost:4200",    // Angular dev server
             "http://127.0.0.1:4200"     // Alternative localhost
         )
 

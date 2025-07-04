@@ -7,10 +7,15 @@ import com.darknessopirate.appvsurveyapi.api.dto.response.survey.SurveyResponse
 import com.darknessopirate.appvsurveyapi.api.dto.response.survey.SurveyStatisticsResponse
 import com.darknessopirate.appvsurveyapi.domain.entity.survey.Survey
 import com.darknessopirate.appvsurveyapi.domain.model.QuestionStatistic
+import com.darknessopirate.appvsurveyapi.domain.service.ISurveySummaryService
 import org.springframework.stereotype.Component
 
 @Component
-class SurveyMapper(private val questionMapper: QuestionMapper, private val accessCodeMapper: AccessCodeMapper) {
+class SurveyMapper(
+    private val questionMapper: QuestionMapper,
+    private val accessCodeMapper: AccessCodeMapper,
+    private val surveySummaryService: ISurveySummaryService
+){
     /*
     * REQUESTS
     */
@@ -47,7 +52,8 @@ class SurveyMapper(private val questionMapper: QuestionMapper, private val acces
         expiresAt = entity.expiresAt,
         isActive = entity.isActive,
         accessCodeCount = entity.accessCodes.size, // Changed from accessCode to accessCodeCount
-        questionCount = entity.questions.size
+        questionCount = entity.questions.size,
+        hasSummaryPassword = surveySummaryService.passwordExists(entity.id!!)
     )
 
     // Survey -> SurveyDetailResponse
@@ -59,7 +65,8 @@ class SurveyMapper(private val questionMapper: QuestionMapper, private val acces
         expiresAt = entity.expiresAt,
         isActive = entity.isActive,
         accessCodes = entity.accessCodes.map { accessCodeMapper.toResponse(it) }, // Changed to list of access codes
-        questions = entity.questions.map { questionMapper.toResponse(it) }
+        questions = entity.questions.map { questionMapper.toResponse(it) },
+        hasSummaryPassword = surveySummaryService.passwordExists(entity.id!!)
     )
 
 }

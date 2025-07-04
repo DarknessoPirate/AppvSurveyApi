@@ -11,5 +11,6 @@ data class SurveyResponse(
     val expiresAt: LocalDate?,
     val isActive: Boolean,
     val accessCodeCount: Int, // Changed from accessCode
-    val questionCount: Int
+    val questionCount: Int,
+    val hasSummaryPassword: Boolean
 )
