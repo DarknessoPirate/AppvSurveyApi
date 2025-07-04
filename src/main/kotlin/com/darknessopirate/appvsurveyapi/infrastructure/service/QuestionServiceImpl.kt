@@ -166,6 +166,34 @@ class QuestionServiceImpl(
         return questions
     }
 
+    override fun findClosedSharedQuestionsPage(pageNumber: Int, pageSize: Int, sortFromOldest: Boolean): PaginatedResponse<QuestionResponse>
+    {
+        val sortDirection = if (sortFromOldest) {
+            Sort.by("id").ascending()
+        } else {
+            Sort.by("id").descending()
+        }
+
+        val pageable = PageRequest.of(pageNumber, pageSize, sortDirection)
+
+        val page = closedQuestionRepository.findSharedPage(pageable)
+        return questionMapper.toPageResponse(page)
+    }
+
+    override fun findOpenSharedQuestionsPage(pageNumber: Int, pageSize: Int, sortFromOldest: Boolean): PaginatedResponse<QuestionResponse>
+    {
+        val sortDirection = if (sortFromOldest) {
+            Sort.by("id").ascending()
+        } else {
+            Sort.by("id").descending()
+        }
+
+        val pageable = PageRequest.of(pageNumber, pageSize, sortDirection)
+
+        val page = openQuestionRepository.findSharedPage(pageable)
+        return questionMapper.toPageResponse(page)
+    }
+
     override fun findSharedQuestionsPage(pageNumber: Int, pageSize: Int, sortFromOldest: Boolean): PaginatedResponse<QuestionResponse>
     {
         val sortDirection = if (sortFromOldest) {

@@ -63,7 +63,7 @@ class   QuestionMapper {
         else -> throw IllegalArgumentException("Unknown question type")
     }
 
-    fun toPageResponse(page: Page<Question>) : PaginatedResponse<QuestionResponse>
+    fun toPageResponse(page: Page<out Question>) : PaginatedResponse<QuestionResponse>
     {
         val mappedContent = page.content.map { toResponse(it) }
         return PaginatedResponse(

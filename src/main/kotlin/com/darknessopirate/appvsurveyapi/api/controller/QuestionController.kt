@@ -79,6 +79,26 @@ class QuestionController(
         return ResponseEntity.ok(pageResponse)
     }
 
+    @GetMapping("/shared/closed/page")
+    fun getClosedSharedQuestionsPage(
+        @RequestParam(defaultValue = "0") pageNumber: Int,
+        @RequestParam(defaultValue = "10") pageSize: Int,
+        @RequestParam(defaultValue = "false") sortFromOldest: Boolean
+    ): ResponseEntity<PaginatedResponse<QuestionResponse>> {
+        val pageResponse = questionService.findClosedSharedQuestionsPage(pageNumber, pageSize, sortFromOldest)
+        return ResponseEntity.ok(pageResponse)
+    }
+
+    @GetMapping("/shared/open/page")
+    fun getOpenSharedQuestionsPage(
+        @RequestParam(defaultValue = "0") pageNumber: Int,
+        @RequestParam(defaultValue = "10") pageSize: Int,
+        @RequestParam(defaultValue = "false") sortFromOldest: Boolean
+    ): ResponseEntity<PaginatedResponse<QuestionResponse>> {
+        val pageResponse = questionService.findOpenSharedQuestionsPage(pageNumber, pageSize, sortFromOldest)
+        return ResponseEntity.ok(pageResponse)
+    }
+
 
     @PostMapping("/survey/{surveyId}/shared/{questionId}")
     fun addSharedQuestionToSurvey(@PathVariable surveyId: Long, @PathVariable questionId: Long): ResponseEntity<QuestionResponse> {

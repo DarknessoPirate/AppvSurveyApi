@@ -42,4 +42,15 @@ interface IQuestionService {
     ): ClosedQuestion
 
 
+    fun findClosedSharedQuestionsPage(
+        pageNumber: Int,
+        pageSize: Int,
+        sortFromOldest: Boolean
+    ): PaginatedResponse<QuestionResponse>
+
+    fun findOpenSharedQuestionsPage(
+        pageNumber: Int,
+        pageSize: Int,
+        sortFromOldest: Boolean
+    ): PaginatedResponse<QuestionResponse>
 }
