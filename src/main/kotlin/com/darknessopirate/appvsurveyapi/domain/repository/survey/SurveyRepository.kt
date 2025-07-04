@@ -1,6 +1,8 @@
 package com.darknessopirate.appvsurveyapi.domain.repository.survey
 
 import com.darknessopirate.appvsurveyapi.domain.entity.survey.Survey
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
@@ -40,6 +42,10 @@ interface SurveyRepository : JpaRepository<Survey, Long> {
     // Count questions by type for a survey
     @Query("SELECT TYPE(q), COUNT(q) FROM Survey s JOIN s.questions q WHERE s.id = :surveyId GROUP BY TYPE(q)")
     fun countQuestionsByType(@Param("surveyId") surveyId: Long): List<Array<Any>>
+
+
+    @Query("SELECT DISTINCT s FROM Survey s LEFT JOIN FETCH s.questions ORDER BY s.createdAt DESC")
+    fun findSurveysPage(pageable: Pageable): Page<Survey>
 
 
 }

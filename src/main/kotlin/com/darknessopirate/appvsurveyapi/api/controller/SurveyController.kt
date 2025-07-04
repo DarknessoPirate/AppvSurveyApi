@@ -1,5 +1,6 @@
 package com.darknessopirate.appvsurveyapi.api.controller
 
+import com.darknessopirate.appvsurveyapi.api.dto.PaginatedResponse
 import com.darknessopirate.appvsurveyapi.api.dto.request.accessCode.CreateAccessCodeRequest
 import com.darknessopirate.appvsurveyapi.api.dto.request.accessCode.UpdateAccessCodeRequest
 import com.darknessopirate.appvsurveyapi.api.dto.request.survey.CopySurveyRequest
@@ -52,6 +53,17 @@ class SurveyController(
         val response = allSurveys.map { surveyMapper.toResponse(it) }
 
         return ResponseEntity.ok(response)
+    }
+
+    @GetMapping("/all/page")
+    fun getAllSurveysPage(
+        @RequestParam(defaultValue = "0") pageNumber: Int,
+        @RequestParam(defaultValue = "10") pageSize: Int,
+        @RequestParam(defaultValue = "false") sortFromOldest: Boolean
+    ) : ResponseEntity<PaginatedResponse<SurveyResponse>>
+    {
+        val pageResponse = surveyService.getSurveysPage(pageNumber, pageSize, sortFromOldest)
+        return ResponseEntity.ok(pageResponse)
     }
 
 

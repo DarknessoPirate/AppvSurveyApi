@@ -1,5 +1,6 @@
 package com.darknessopirate.appvsurveyapi.infrastructure.mappers
 
+import com.darknessopirate.appvsurveyapi.api.dto.PaginatedResponse
 import com.darknessopirate.appvsurveyapi.api.dto.request.survey.CreateSurveyRequest
 import com.darknessopirate.appvsurveyapi.api.dto.request.survey.CreateSurveyWithQuestionsRequest
 import com.darknessopirate.appvsurveyapi.api.dto.response.survey.SurveyDetailResponse
@@ -8,6 +9,7 @@ import com.darknessopirate.appvsurveyapi.api.dto.response.survey.SurveyStatistic
 import com.darknessopirate.appvsurveyapi.domain.entity.survey.Survey
 import com.darknessopirate.appvsurveyapi.domain.model.QuestionStatistic
 import com.darknessopirate.appvsurveyapi.domain.service.ISurveySummaryService
+import org.springframework.data.domain.Page
 import org.springframework.stereotype.Component
 
 @Component
@@ -68,5 +70,18 @@ class SurveyMapper(
         questions = entity.questions.map { questionMapper.toResponse(it) },
         hasSummaryPassword = surveySummaryService.passwordExists(entity.id!!)
     )
+
+    fun toPageResponse(page: Page<Survey>): PaginatedResponse<SurveyResponse> {
+        val mappedContent = page.content.map { toResponse(it) }
+        return PaginatedResponse(
+            data = mappedContent,
+            currentPage = page.number,
+            totalPages = page.totalPages,
+            totalElements = page.totalElements,
+            pageSize = page.size,
+            isFirst = page.isFirst,
+            isLast = page.isLast,
+        )
+    }
 
 }

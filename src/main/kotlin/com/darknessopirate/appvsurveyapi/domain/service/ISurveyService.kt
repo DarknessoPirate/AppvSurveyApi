@@ -1,6 +1,8 @@
 package com.darknessopirate.appvsurveyapi.domain.service
 
+import com.darknessopirate.appvsurveyapi.api.dto.PaginatedResponse
 import com.darknessopirate.appvsurveyapi.api.dto.request.survey.CreateSurveyWithQuestionsRequest
+import com.darknessopirate.appvsurveyapi.api.dto.response.survey.SurveyResponse
 import com.darknessopirate.appvsurveyapi.domain.entity.question.Question
 import com.darknessopirate.appvsurveyapi.domain.entity.survey.Survey
 import com.darknessopirate.appvsurveyapi.domain.model.QuestionStatistic
@@ -25,4 +27,5 @@ interface ISurveyService {
     fun findAllSurveys(): List<Survey>
     // Delete survey and all related data
     fun deleteSurvey(surveyId: Long)
+    fun getSurveysPage(pageNumber: Int, pageSize: Int, sortFromOldest: Boolean): PaginatedResponse<SurveyResponse>
 }

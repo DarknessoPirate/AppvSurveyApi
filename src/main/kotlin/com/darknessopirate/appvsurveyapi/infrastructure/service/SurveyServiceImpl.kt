@@ -1,5 +1,7 @@
 package com.darknessopirate.appvsurveyapi.infrastructure.service
+import com.darknessopirate.appvsurveyapi.api.dto.PaginatedResponse
 import com.darknessopirate.appvsurveyapi.api.dto.request.survey.CreateSurveyWithQuestionsRequest
+import com.darknessopirate.appvsurveyapi.api.dto.response.survey.SurveyResponse
 import com.darknessopirate.appvsurveyapi.domain.entity.question.ClosedQuestion
 import com.darknessopirate.appvsurveyapi.domain.entity.question.Question
 import com.darknessopirate.appvsurveyapi.domain.entity.survey.Survey
@@ -13,6 +15,8 @@ import com.darknessopirate.appvsurveyapi.domain.service.ISurveyService
 import com.darknessopirate.appvsurveyapi.infrastructure.mappers.SurveyMapper
 import jakarta.persistence.EntityNotFoundException
 import org.hibernate.Hibernate
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
@@ -206,6 +210,21 @@ class SurveyServiceImpl(
         surveyRepository.deleteById(surveyId)
     }
 
+    @Transactional
+    override fun getSurveysPage(pageNumber: Int, pageSize: Int, sortFromOldest: Boolean) : PaginatedResponse<SurveyResponse>
+    {
+        val sortDirection = if (sortFromOldest) {
+            Sort.by("id").ascending()
+        } else {
+            Sort.by("id").descending()
+        }
+
+        val pageable = PageRequest.of(pageNumber, pageSize, sortDirection)
+
+        val page = surveyRepository.findSurveysPage(pageable)
+
+        return surveyMapper.toPageResponse(page)
+    }
     // Helper methods
     private fun getMaxQuestionOrder(surveyId: Long): Int {
         val survey = surveyRepository.findByIdWithQuestions(surveyId)
