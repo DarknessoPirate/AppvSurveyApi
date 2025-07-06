@@ -166,6 +166,8 @@ class QuestionServiceImpl(
         return questions
     }
 
+
+
     override fun findClosedSharedQuestionsPage(pageNumber: Int, pageSize: Int, sortFromOldest: Boolean): PaginatedResponse<QuestionResponse>
     {
         val sortDirection = if (sortFromOldest) {
@@ -177,6 +179,34 @@ class QuestionServiceImpl(
         val pageable = PageRequest.of(pageNumber, pageSize, sortDirection)
 
         val page = closedQuestionRepository.findSharedPage(pageable)
+        return questionMapper.toPageResponse(page)
+    }
+
+    override fun findSharedCheckboxQuestionsPage(pageNumber: Int, pageSize: Int, sortFromOldest: Boolean): PaginatedResponse<QuestionResponse>
+    {
+        val sortDirection = if (sortFromOldest) {
+            Sort.by("id").ascending()
+        } else {
+            Sort.by("id").descending()
+        }
+
+        val pageable = PageRequest.of(pageNumber, pageSize, sortDirection)
+
+        val page = closedQuestionRepository.findSharedPageByType(SelectionType.MULTIPLE,pageable)
+        return questionMapper.toPageResponse(page)
+    }
+
+    override fun findSharedDropdownQuestionsPage(pageNumber: Int, pageSize: Int, sortFromOldest: Boolean): PaginatedResponse<QuestionResponse>
+    {
+        val sortDirection = if (sortFromOldest) {
+            Sort.by("id").ascending()
+        } else {
+            Sort.by("id").descending()
+        }
+
+        val pageable = PageRequest.of(pageNumber, pageSize, sortDirection)
+
+        val page = closedQuestionRepository.findSharedPageByType(SelectionType.SINGLE,pageable)
         return questionMapper.toPageResponse(page)
     }
 

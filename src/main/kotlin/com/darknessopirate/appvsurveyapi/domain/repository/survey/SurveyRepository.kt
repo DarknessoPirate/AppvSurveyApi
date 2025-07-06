@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Repository
@@ -35,17 +36,29 @@ interface SurveyRepository : JpaRepository<Survey, Long> {
     @Query("SELECT DISTINCT s FROM Survey s LEFT JOIN FETCH s.accessCodes WHERE s.id IN :surveyIds")
     fun findSurveysWithAccessCodes(@Param("surveyIds") surveyIds: List<Long>): List<Survey>
 
-    // Find surveys expiring soon
-    @Query("SELECT s FROM Survey s WHERE s.expiresAt IS NOT NULL AND s.expiresAt BETWEEN :startDate AND :endDate")
-    fun findExpiringBetween(@Param("startDate") startDate: LocalDateTime, @Param("endDate") endDate: LocalDateTime): List<Survey>
-
     // Count questions by type for a survey
     @Query("SELECT TYPE(q), COUNT(q) FROM Survey s JOIN s.questions q WHERE s.id = :surveyId GROUP BY TYPE(q)")
     fun countQuestionsByType(@Param("surveyId") surveyId: Long): List<Array<Any>>
 
 
-    @Query("SELECT DISTINCT s FROM Survey s LEFT JOIN FETCH s.questions ORDER BY s.createdAt DESC")
+    @Query("SELECT DISTINCT s FROM Survey s LEFT JOIN FETCH s.questions")
     fun findSurveysPage(pageable: Pageable): Page<Survey>
+
+    @Query("SELECT DISTINCT s FROM Survey s LEFT JOIN FETCH s.questions WHERE s.isActive = true")
+    fun findActiveSurveysPage(pageable: Pageable): Page<Survey>
+
+    @Query("SELECT DISTINCT s FROM Survey s LEFT JOIN FETCH s.questions WHERE s.isActive = false")
+    fun findInactiveSurveysPage(pageable: Pageable): Page<Survey>
+
+    @Query("SELECT DISTINCT s FROM Survey s LEFT JOIN FETCH s.questions WHERE s.expiresAt IS NOT NULL AND s.expiresAt < CURRENT_DATE ")
+    fun findExpiredSurveysPage(pageable: Pageable): Page<Survey>
+
+    // Find surveys expiring soon
+    @Query("SELECT s FROM Survey s LEFT JOIN FETCH s.questions WHERE s.expiresAt IS NOT NULL AND s.expiresAt BETWEEN :startDate AND :endDate")
+    fun findExpiringBetweenPage(@Param("startDate") startDate: LocalDate,
+                                @Param("endDate") endDate: LocalDate,
+                                pageable: Pageable): Page<Survey>
+
 
 
 }

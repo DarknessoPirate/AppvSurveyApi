@@ -79,6 +79,16 @@ class QuestionController(
         return ResponseEntity.ok(pageResponse)
     }
 
+    @GetMapping("/shared/open/page")
+    fun getOpenSharedQuestionsPage(
+        @RequestParam(defaultValue = "0") pageNumber: Int,
+        @RequestParam(defaultValue = "10") pageSize: Int,
+        @RequestParam(defaultValue = "false") sortFromOldest: Boolean
+    ): ResponseEntity<PaginatedResponse<QuestionResponse>> {
+        val pageResponse = questionService.findOpenSharedQuestionsPage(pageNumber, pageSize, sortFromOldest)
+        return ResponseEntity.ok(pageResponse)
+    }
+
     @GetMapping("/shared/closed/page")
     fun getClosedSharedQuestionsPage(
         @RequestParam(defaultValue = "0") pageNumber: Int,
@@ -89,13 +99,23 @@ class QuestionController(
         return ResponseEntity.ok(pageResponse)
     }
 
-    @GetMapping("/shared/open/page")
-    fun getOpenSharedQuestionsPage(
+    @GetMapping("/shared/checkbox/page")
+    fun getCheckboxSharedQuestionsPage(
         @RequestParam(defaultValue = "0") pageNumber: Int,
         @RequestParam(defaultValue = "10") pageSize: Int,
         @RequestParam(defaultValue = "false") sortFromOldest: Boolean
     ): ResponseEntity<PaginatedResponse<QuestionResponse>> {
-        val pageResponse = questionService.findOpenSharedQuestionsPage(pageNumber, pageSize, sortFromOldest)
+        val pageResponse = questionService.findSharedCheckboxQuestionsPage(pageNumber, pageSize, sortFromOldest)
+        return ResponseEntity.ok(pageResponse)
+    }
+
+    @GetMapping("/shared/dropdown/page")
+    fun getDropdownSharedQuestionsPage(
+        @RequestParam(defaultValue = "0") pageNumber: Int,
+        @RequestParam(defaultValue = "10") pageSize: Int,
+        @RequestParam(defaultValue = "false") sortFromOldest: Boolean
+    ): ResponseEntity<PaginatedResponse<QuestionResponse>> {
+        val pageResponse = questionService.findSharedDropdownQuestionsPage(pageNumber, pageSize, sortFromOldest)
         return ResponseEntity.ok(pageResponse)
     }
 

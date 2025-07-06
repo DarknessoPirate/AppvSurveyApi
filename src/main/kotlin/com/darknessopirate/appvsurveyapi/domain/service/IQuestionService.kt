@@ -53,4 +53,16 @@ interface IQuestionService {
         pageSize: Int,
         sortFromOldest: Boolean
     ): PaginatedResponse<QuestionResponse>
+
+    fun findSharedCheckboxQuestionsPage(
+        pageNumber: Int,
+        pageSize: Int,
+        sortFromOldest: Boolean
+    ): PaginatedResponse<QuestionResponse>
+
+    fun findSharedDropdownQuestionsPage(
+        pageNumber: Int,
+        pageSize: Int,
+        sortFromOldest: Boolean
+    ): PaginatedResponse<QuestionResponse>
 }

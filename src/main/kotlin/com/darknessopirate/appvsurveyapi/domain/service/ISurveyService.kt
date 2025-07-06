@@ -6,6 +6,8 @@ import com.darknessopirate.appvsurveyapi.api.dto.response.survey.SurveyResponse
 import com.darknessopirate.appvsurveyapi.domain.entity.question.Question
 import com.darknessopirate.appvsurveyapi.domain.entity.survey.Survey
 import com.darknessopirate.appvsurveyapi.domain.model.QuestionStatistic
+import java.time.LocalDate
+import java.time.LocalDateTime
 
 interface ISurveyService {
 
@@ -28,4 +30,24 @@ interface ISurveyService {
     // Delete survey and all related data
     fun deleteSurvey(surveyId: Long)
     fun getSurveysPage(pageNumber: Int, pageSize: Int, sortFromOldest: Boolean): PaginatedResponse<SurveyResponse>
+    fun getActiveSurveysPage(pageNumber: Int, pageSize: Int, sortFromOldest: Boolean): PaginatedResponse<SurveyResponse>
+    fun getInactiveSurveysPage(
+        pageNumber: Int,
+        pageSize: Int,
+        sortFromOldest: Boolean
+    ): PaginatedResponse<SurveyResponse>
+
+    fun getExpiredSurveysPage(
+        pageNumber: Int,
+        pageSize: Int,
+        sortFromOldest: Boolean
+    ): PaginatedResponse<SurveyResponse>
+
+    fun getExpiringSurveysPage(
+        startDate: LocalDate,
+        endDate: LocalDate,
+        pageNumber: Int,
+        pageSize: Int,
+        sortFromOldest: Boolean
+    ): PaginatedResponse<SurveyResponse>
 }

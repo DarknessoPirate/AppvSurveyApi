@@ -20,6 +20,7 @@ import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Service
 @Transactional
@@ -210,13 +211,12 @@ class SurveyServiceImpl(
         surveyRepository.deleteById(surveyId)
     }
 
-    @Transactional
     override fun getSurveysPage(pageNumber: Int, pageSize: Int, sortFromOldest: Boolean) : PaginatedResponse<SurveyResponse>
     {
         val sortDirection = if (sortFromOldest) {
-            Sort.by("id").ascending()
+            Sort.by("createdAt").ascending()
         } else {
-            Sort.by("id").descending()
+            Sort.by("createdAt").descending()
         }
 
         val pageable = PageRequest.of(pageNumber, pageSize, sortDirection)
@@ -225,6 +225,72 @@ class SurveyServiceImpl(
 
         return surveyMapper.toPageResponse(page)
     }
+
+    override fun getActiveSurveysPage(pageNumber: Int, pageSize: Int, sortFromOldest: Boolean) : PaginatedResponse<SurveyResponse>
+    {
+        val sortDirection = if (sortFromOldest) {
+            Sort.by("createdAt").ascending()
+        } else {
+            Sort.by("createdAt").descending()
+        }
+
+        val pageable = PageRequest.of(pageNumber, pageSize, sortDirection)
+
+        val page = surveyRepository.findActiveSurveysPage(pageable)
+
+        return surveyMapper.toPageResponse(page)
+    }
+
+    override fun getInactiveSurveysPage(pageNumber: Int, pageSize: Int, sortFromOldest: Boolean) : PaginatedResponse<SurveyResponse>
+    {
+        val sortDirection = if (sortFromOldest) {
+            Sort.by("createdAt").ascending()
+        } else {
+            Sort.by("createdAt").descending()
+        }
+
+        val pageable = PageRequest.of(pageNumber, pageSize, sortDirection)
+
+        val page = surveyRepository.findInactiveSurveysPage(pageable)
+
+        return surveyMapper.toPageResponse(page)
+    }
+
+    override fun getExpiredSurveysPage( pageNumber: Int, pageSize: Int, sortFromOldest: Boolean
+    ) : PaginatedResponse<SurveyResponse>
+    {
+        val sortDirection = if (sortFromOldest) {
+            Sort.by("createdAt").ascending()
+        } else {
+            Sort.by("createdAt").descending()
+        }
+
+        val pageable = PageRequest.of(pageNumber, pageSize, sortDirection)
+
+        val page = surveyRepository.findExpiredSurveysPage(pageable)
+
+        return surveyMapper.toPageResponse(page)
+    }
+
+    override fun getExpiringSurveysPage(startDate: LocalDate, endDate:LocalDate,
+                                        pageNumber: Int, pageSize: Int, sortFromOldest: Boolean
+    ) : PaginatedResponse<SurveyResponse>
+    {
+        val sortDirection = if (sortFromOldest) {
+            Sort.by("createdAt").ascending()
+        } else {
+            Sort.by("createdAt").descending()
+        }
+
+        val pageable = PageRequest.of(pageNumber, pageSize, sortDirection)
+
+        val page = surveyRepository.findExpiringBetweenPage(startDate,endDate,pageable)
+
+        return surveyMapper.toPageResponse(page)
+    }
+
+
+
     // Helper methods
     private fun getMaxQuestionOrder(surveyId: Long): Int {
         val survey = surveyRepository.findByIdWithQuestions(surveyId)

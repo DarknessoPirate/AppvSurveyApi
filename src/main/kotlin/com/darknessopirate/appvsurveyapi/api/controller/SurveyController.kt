@@ -19,6 +19,8 @@ import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
+import java.time.LocalDate
+import java.time.LocalDateTime
 
 @RestController
 @Validated
@@ -63,6 +65,55 @@ class SurveyController(
     ) : ResponseEntity<PaginatedResponse<SurveyResponse>>
     {
         val pageResponse = surveyService.getSurveysPage(pageNumber, pageSize, sortFromOldest)
+        return ResponseEntity.ok(pageResponse)
+    }
+
+    @GetMapping("/active/page")
+    fun getActiveSurveysPage(
+        @RequestParam(defaultValue = "0") pageNumber: Int,
+        @RequestParam(defaultValue = "10") pageSize: Int,
+        @RequestParam(defaultValue = "false") sortFromOldest: Boolean
+    ) : ResponseEntity<PaginatedResponse<SurveyResponse>>
+    {
+        val pageResponse = surveyService.getActiveSurveysPage(pageNumber, pageSize, sortFromOldest)
+        return ResponseEntity.ok(pageResponse)
+    }
+
+    @GetMapping("/inactive/page")
+    fun getInactiveSurveysPage(
+        @RequestParam(defaultValue = "0") pageNumber: Int,
+        @RequestParam(defaultValue = "10") pageSize: Int,
+        @RequestParam(defaultValue = "false") sortFromOldest: Boolean
+    ) : ResponseEntity<PaginatedResponse<SurveyResponse>>
+    {
+        val pageResponse = surveyService.getInactiveSurveysPage(pageNumber, pageSize, sortFromOldest)
+        return ResponseEntity.ok(pageResponse)
+    }
+
+    @GetMapping("/expired/page")
+    fun getExpiredSurveysPage(
+        @RequestParam(defaultValue = "0") pageNumber: Int,
+        @RequestParam(defaultValue = "10") pageSize: Int,
+        @RequestParam(defaultValue = "false") sortFromOldest: Boolean
+    ) : ResponseEntity<PaginatedResponse<SurveyResponse>>
+    {
+        val pageResponse = surveyService.getExpiredSurveysPage(pageNumber, pageSize, sortFromOldest)
+        return ResponseEntity.ok(pageResponse)
+    }
+
+    @GetMapping("/expiring/page")
+    fun getExpiringBetweenPage(
+        @RequestParam(required = false) startDate: LocalDate?,
+        @RequestParam(required = false) endDate: LocalDate?,
+        @RequestParam(defaultValue = "0") pageNumber: Int,
+        @RequestParam(defaultValue = "10") pageSize: Int,
+        @RequestParam(defaultValue = "false") sortFromOldest: Boolean
+    ) : ResponseEntity<PaginatedResponse<SurveyResponse>>
+    {
+        val finalStartDate = startDate ?: LocalDate.now()
+        val finalEndDate = endDate ?: LocalDate.now().plusDays(1)
+
+        val pageResponse = surveyService.getExpiringSurveysPage(finalStartDate,finalEndDate,pageNumber, pageSize, sortFromOldest)
         return ResponseEntity.ok(pageResponse)
     }
 
