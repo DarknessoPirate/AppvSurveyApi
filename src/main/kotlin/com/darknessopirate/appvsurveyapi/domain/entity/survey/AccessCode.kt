@@ -11,7 +11,7 @@ data class AccessCode (
     var id: Long? = null,
 
     @Column(unique = true, nullable = false)
-    val code: String,
+    var code: String,
 
     @Column(nullable = false)
     var title: String,

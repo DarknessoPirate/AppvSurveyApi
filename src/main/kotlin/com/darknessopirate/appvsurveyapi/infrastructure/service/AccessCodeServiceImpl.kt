@@ -25,7 +25,7 @@ class AccessCodeServiceImpl(
             EntityNotFoundException("Survey not found: $surveyId")
         }
 
-        val code = generateRandomCode()
+        val code = request.code ?: generateRandomCode()
 
         val accessCode = AccessCode(
             code = code,
@@ -45,6 +45,9 @@ class AccessCodeServiceImpl(
         }
 
         accessCode.title = request.title
+        if(request.code != null ) {
+            accessCode.code = request.code
+        }
         accessCode.description = request.description
         accessCode.isActive = request.isActive
         accessCode.expiresAt = request.expiresAt
@@ -78,10 +81,6 @@ class AccessCodeServiceImpl(
     }
 
     private fun generateRandomCode(): String {
-        // Generate a random 8-character alphanumeric code
-        val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-        return (1..8)
-            .map { chars.random() }
-            .joinToString("")
+        return UUID.randomUUID().toString().substring(0, 16)
     }
 }
