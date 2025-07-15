@@ -2,6 +2,7 @@ package com.darknessopirate.appvsurveyapi.domain.service
 
 import com.darknessopirate.appvsurveyapi.api.dto.PaginatedResponse
 import com.darknessopirate.appvsurveyapi.api.dto.request.survey.CreateSurveyWithQuestionsRequest
+import com.darknessopirate.appvsurveyapi.api.dto.request.survey.UpdateSurveyRequest
 import com.darknessopirate.appvsurveyapi.api.dto.response.survey.SurveyResponse
 import com.darknessopirate.appvsurveyapi.domain.entity.question.Question
 import com.darknessopirate.appvsurveyapi.domain.entity.survey.Survey
@@ -13,6 +14,7 @@ interface ISurveyService {
 
     // Create survey with question ids
     fun createSurveyWithSelectedQuestions(request: CreateSurveyWithQuestionsRequest): Survey
+    abstract fun updateSurvey(surveyId: Long, request: UpdateSurveyRequest): SurveyResponse
     fun findByAccessCode(accessCode: String): Survey
     // Find survey with all questions and answers
     fun findWithQuestions(surveyId: Long): Survey
@@ -50,4 +52,6 @@ interface ISurveyService {
         pageSize: Int,
         sortFromOldest: Boolean
     ): PaginatedResponse<SurveyResponse>
+
+
 }

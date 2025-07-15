@@ -34,6 +34,13 @@ class SurveySummaryController(
         return ResponseEntity.ok(response)
     }
 
+    @DeleteMapping("/delete-password/{id}")
+    fun deleteSummaryPassword(@PathVariable id: Long): ResponseEntity<Void> {
+        surveySummaryService.deleteSummaryPassword(id)
+
+        return ResponseEntity.noContent().build()
+    }
+
     @GetMapping("/get-password/{id}")
     fun getSummaryPassword(@PathVariable id: Long): ResponseEntity<SummaryPasswordResponse> {
         val passwordEntity = surveySummaryService.getSummaryPassword(id)
@@ -59,7 +66,6 @@ class SurveySummaryController(
         return ResponseEntity.ok(response)
     }
 
-    // TODO: MAKE THIS ANONYMOUS
     @PostMapping("/{id}")
     fun getSurveyStatistics(
         @PathVariable id: Long,
@@ -75,8 +81,6 @@ class SurveySummaryController(
         }
     }
 
-    // Optional: Admin endpoint to get statistics without password
-    // TODO: ensure jwt auth works here
     @GetMapping("/admin/{id}")
     fun getSurveyStatisticsAdmin(@PathVariable id: Long): ResponseEntity<SurveyStatisticsResponse> {
         return try {

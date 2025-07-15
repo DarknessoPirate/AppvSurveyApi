@@ -9,4 +9,5 @@ interface ISurveySummaryService {
     fun passwordExists(surveyId: Long): Boolean
     fun getSurveyStatistics(surveyId: Long, password: String): SurveyStatisticsResponse
     fun generateSurveyStatistics(surveyId: Long): SurveyStatisticsResponse
+    fun deleteSummaryPassword(surveyId: Long)
 }

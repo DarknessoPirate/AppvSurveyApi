@@ -1,6 +1,7 @@
 package com.darknessopirate.appvsurveyapi.infrastructure.service
 import com.darknessopirate.appvsurveyapi.api.dto.PaginatedResponse
 import com.darknessopirate.appvsurveyapi.api.dto.request.survey.CreateSurveyWithQuestionsRequest
+import com.darknessopirate.appvsurveyapi.api.dto.request.survey.UpdateSurveyRequest
 import com.darknessopirate.appvsurveyapi.api.dto.response.survey.SurveyResponse
 import com.darknessopirate.appvsurveyapi.domain.entity.question.ClosedQuestion
 import com.darknessopirate.appvsurveyapi.domain.entity.question.Question
@@ -45,6 +46,27 @@ class SurveyServiceImpl(
         }
 
         return surveyRepository.save(survey)
+    }
+
+
+    override fun updateSurvey(surveyId: Long, request: UpdateSurveyRequest): SurveyResponse {
+        // Find the existing survey
+        val survey = surveyRepository.findByIdWithQuestions(surveyId)
+            ?: throw EntityNotFoundException("Survey not found with id: $surveyId")
+
+        // Update the survey fields
+        survey.title = request.title
+        survey.description = request.description
+        survey.expiresAt = request.expiresAt
+
+        // Initialize access codes to prevent lazy loading issues
+        Hibernate.initialize(survey.accessCodes)
+
+        // Save the updated survey
+        val updatedSurvey = surveyRepository.save(survey)
+
+        // Convert to response and return
+        return surveyMapper.toResponse(updatedSurvey)
     }
 
     // Find survey by access code

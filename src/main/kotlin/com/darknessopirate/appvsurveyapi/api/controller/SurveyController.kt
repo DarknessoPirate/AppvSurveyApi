@@ -4,13 +4,12 @@ import com.darknessopirate.appvsurveyapi.api.dto.PaginatedResponse
 import com.darknessopirate.appvsurveyapi.api.dto.request.accessCode.CreateAccessCodeRequest
 import com.darknessopirate.appvsurveyapi.api.dto.request.accessCode.UpdateAccessCodeRequest
 import com.darknessopirate.appvsurveyapi.api.dto.request.survey.CopySurveyRequest
-import com.darknessopirate.appvsurveyapi.api.dto.request.survey.CreateSurveyRequest
+import com.darknessopirate.appvsurveyapi.api.dto.request.survey.UpdateSurveyRequest
 import com.darknessopirate.appvsurveyapi.api.dto.request.survey.CreateSurveyWithQuestionsRequest
 import com.darknessopirate.appvsurveyapi.api.dto.response.accessCode.AccessCodeListResponse
 import com.darknessopirate.appvsurveyapi.api.dto.response.accessCode.AccessCodeResponse
 import com.darknessopirate.appvsurveyapi.api.dto.response.survey.SurveyDetailResponse
 import com.darknessopirate.appvsurveyapi.api.dto.response.survey.SurveyResponse
-import com.darknessopirate.appvsurveyapi.api.dto.response.survey.SurveyStatisticsResponse
 import com.darknessopirate.appvsurveyapi.domain.service.IAccessCodeService
 import com.darknessopirate.appvsurveyapi.domain.service.ISurveyService
 import com.darknessopirate.appvsurveyapi.infrastructure.mappers.AccessCodeMapper
@@ -20,7 +19,6 @@ import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import java.time.LocalDate
-import java.time.LocalDateTime
 
 @RestController
 @Validated
@@ -38,6 +36,13 @@ class SurveyController(
         val createdSurveyDetailed = surveyMapper.toDetailResponse(survey)
 
         return ResponseEntity.ok(createdSurveyDetailed)
+    }
+
+    @PutMapping("/{surveyId}")
+    fun updateSurvey(@PathVariable surveyId: Long, @RequestBody request: UpdateSurveyRequest): ResponseEntity<SurveyResponse> {
+        val response = surveyService.updateSurvey(surveyId , request)
+
+        return ResponseEntity.ok(response)
     }
 
     @GetMapping("/{id}")

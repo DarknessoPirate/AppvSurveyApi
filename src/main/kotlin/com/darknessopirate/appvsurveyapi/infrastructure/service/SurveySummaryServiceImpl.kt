@@ -49,6 +49,13 @@ class SurveySummaryServiceImpl(
         }
     }
 
+    override fun deleteSummaryPassword(surveyId: Long) {
+        val passwordEntity = surveySummaryPasswordRepository.findBySurveyId(surveyId).orElseThrow {
+            EntityNotFoundException("No summary password found for survey with id: $surveyId")
+        }
+        surveySummaryPasswordRepository.delete(passwordEntity)
+    }
+
     override fun getSummaryPassword(surveyId: Long): SurveySummaryPassword? {
         return surveySummaryPasswordRepository.findBySurveyId(surveyId).orElse(null)
     }
