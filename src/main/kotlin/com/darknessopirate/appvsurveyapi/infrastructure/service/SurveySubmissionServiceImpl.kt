@@ -21,6 +21,9 @@ import com.darknessopirate.appvsurveyapi.domain.service.IAccessCodeService
 import com.darknessopirate.appvsurveyapi.domain.service.ISurveySubmissionService
 import jakarta.persistence.EntityNotFoundException
 import org.hibernate.Hibernate
+import org.hibernate.LazyInitializationException
+import org.slf4j.LoggerFactory
+import org.springframework.dao.DataAccessException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
@@ -38,6 +41,8 @@ class SurveySubmissionServiceImpl(
     private val accessCodeService: IAccessCodeService
 ) : ISurveySubmissionService {
 
+    private val logger = LoggerFactory.getLogger(SurveySubmissionServiceImpl::class.java)
+
     override fun submitByAccessCode(
         accessCode: String,
         answers: List<AnswerRequest>
@@ -45,7 +50,10 @@ class SurveySubmissionServiceImpl(
         val accessCodeEntity = accessCodeService.validateAccessCode(accessCode)
             ?: throw EntityNotFoundException("Invalid or expired access code: $accessCode")
 
-        val survey = surveyRepository.findByIdWithQuestions(accessCodeEntity.survey?.id!!)
+        val surveyId = accessCodeEntity.survey?.id
+            ?: throw IllegalStateException("Access code is not associated with a survey")
+
+        val survey = surveyRepository.findByIdWithQuestions(surveyId)
             ?: throw EntityNotFoundException("Survey not found for access code: $accessCode")
 
         if (!survey.isActive) {
@@ -57,10 +65,17 @@ class SurveySubmissionServiceImpl(
         }
 
         // Increment usage count
-        accessCodeEntity.id?.let { accessCodeService.incrementUsage(it) }
+        try {
+            val codeId = accessCodeEntity.id
+                ?: throw IllegalStateException("Access code ID cannot be null")
+            accessCodeService.incrementUsage(codeId)
+        } catch (e: DataAccessException) {
+            logger.error("Failed to increment usage count for access code: $accessCode", e)
+            throw IllegalStateException("Failed to update access code usage", e)
+        }
 
         // Pass the access code entity to link it properly
-        return submitSurveyWithAccessCode(survey.id!!, answers, accessCodeEntity)
+        return submitSurveyWithAccessCode(surveyId, answers, accessCodeEntity)
     }
 
     private fun submitSurveyWithAccessCode(
@@ -91,7 +106,13 @@ class SurveySubmissionServiceImpl(
             survey = survey,
             accessCode = accessCode
         )
-        val savedSubmission = submittedSurveyRepository.save(submittedSurvey)
+
+        val savedSubmission = try {
+            submittedSurveyRepository.save(submittedSurvey)
+        } catch (e: DataAccessException) {
+            logger.error("Failed to save submitted survey for survey $surveyId", e)
+            throw IllegalStateException("Failed to save survey submission", e)
+        }
 
         // Process each answer based on its type
         answers.forEach { answerRequest ->
@@ -117,7 +138,12 @@ class SurveySubmissionServiceImpl(
             savedSubmission.addUserAnswer(userAnswer)
         }
 
-        return submittedSurveyRepository.save(savedSubmission)
+        return try {
+            submittedSurveyRepository.save(savedSubmission)
+        } catch (e: DataAccessException) {
+            logger.error("Failed to save final submission with answers for survey $surveyId", e)
+            throw IllegalStateException("Failed to save submission answers", e)
+        }
     }
 
     // Get submission by ID
@@ -125,31 +151,44 @@ class SurveySubmissionServiceImpl(
         val submission = submittedSurveyRepository.findByIdWithSurveyAndAnswers(submissionId)
             ?: return null
 
-        // Initialize lazy-loaded collections
-        Hibernate.initialize(submission.userAnswers)
+        // Initialize lazy-loaded collections with proper error handling
+        try {
+            Hibernate.initialize(submission.userAnswers)
 
-        // For each user answer, if it's a closed answer, initialize selected answers
-        submission.userAnswers.forEach { userAnswer ->
-            if (userAnswer is ClosedUserAnswer) {
-                try {
+            // For each user answer, if it's a closed answer, initialize selected answers
+            submission.userAnswers.forEach { userAnswer ->
+                if (userAnswer is ClosedUserAnswer) {
                     Hibernate.initialize(userAnswer.selectedAnswers)
-                    println("✅ Loaded ${userAnswer.selectedAnswers.size} selected answers for question ${userAnswer.question.id}")
-                } catch (e: Exception) {
-                    println("❌ Failed to load selected answers for question ${userAnswer.question.id}: ${e.message}")
+                    logger.debug("Loaded {} selected answers for question {}",
+                        userAnswer.selectedAnswers.size, userAnswer.question.id)
                 }
             }
+        } catch (e: LazyInitializationException) {
+            logger.error("Lazy initialization error while loading submission $submissionId", e)
+            throw IllegalStateException("Failed to load submission data: session may have been closed", e)
+        } catch (e: Exception) {
+            logger.error("Unexpected error while loading submission $submissionId", e)
+            throw IllegalStateException("Failed to load submission data", e)
         }
 
         return submission
     }
 
     override fun getSubmissionsByAccessCode(accessCode: String): List<SubmittedSurvey> {
-        return submittedSurveyRepository.findByAccessCodeWithAnswers(accessCode)
+        return try {
+            submittedSurveyRepository.findByAccessCodeWithAnswers(accessCode)
+        } catch (e: DataAccessException) {
+            logger.error("Database error while getting submissions for access code: $accessCode", e)
+            throw IllegalStateException("Failed to retrieve submissions", e)
+        }
     }
 
     // Helper methods
     private fun validateRequiredQuestions(survey: Survey, answers: List<AnswerRequest>) {
-        val requiredQuestionIds = survey.questions.filter { it.required }.map { it.id }
+        val requiredQuestionIds = survey.questions
+            .filter { it.required }
+            .mapNotNull { it.id } // Filter out questions with null IDs
+
         val answeredQuestionIds = answers.map { it.questionId }
 
         val unansweredRequired = requiredQuestionIds - answeredQuestionIds.toSet()
@@ -164,7 +203,8 @@ class SurveySubmissionServiceImpl(
         submittedSurvey: SubmittedSurvey
     ): OpenUserAnswer {
         if (answerRequest.textValue.isBlank() && question.required) {
-            throw IllegalArgumentException("Text answer required for question ${question.id}")
+            val questionId = question.id ?: "unknown"
+            throw IllegalArgumentException("Text answer required for question $questionId")
         }
 
         return OpenUserAnswer(
@@ -179,8 +219,10 @@ class SurveySubmissionServiceImpl(
         answerRequest: ClosedAnswerRequest,
         submittedSurvey: SubmittedSurvey
     ): ClosedUserAnswer {
+        val questionId = question.id ?: "unknown"
+
         if (answerRequest.selectedAnswerIds.isEmpty() && question.required) {
-            throw IllegalArgumentException("Answer selection required for question ${question.id}")
+            throw IllegalArgumentException("Answer selection required for question $questionId")
         }
 
         val selectedAnswers = question.possibleAnswers.filter {
@@ -189,7 +231,16 @@ class SurveySubmissionServiceImpl(
 
         // Validate selection type constraints
         if (question.selectionType == SelectionType.SINGLE && selectedAnswers.size > 1) {
-            throw IllegalArgumentException("Only one answer allowed for question ${question.id}")
+            throw IllegalArgumentException("Only one answer allowed for question $questionId")
+        }
+
+        // Validate that all requested answer IDs were found
+        val foundAnswerIds = selectedAnswers.mapNotNull { it.id }.toSet()
+        val requestedAnswerIds = answerRequest.selectedAnswerIds.toSet()
+        val missingAnswerIds = requestedAnswerIds - foundAnswerIds
+
+        if (missingAnswerIds.isNotEmpty()) {
+            throw IllegalArgumentException("Invalid answer IDs for question $questionId: $missingAnswerIds")
         }
 
         val answer = ClosedUserAnswer(

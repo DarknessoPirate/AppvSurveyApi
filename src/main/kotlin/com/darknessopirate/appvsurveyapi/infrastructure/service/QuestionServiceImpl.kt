@@ -18,6 +18,10 @@ import com.darknessopirate.appvsurveyapi.domain.service.IQuestionService
 import com.darknessopirate.appvsurveyapi.infrastructure.mappers.QuestionMapper
 import jakarta.persistence.EntityNotFoundException
 import org.hibernate.Hibernate
+import org.hibernate.LazyInitializationException
+import org.slf4j.LoggerFactory
+import org.springframework.dao.DataAccessException
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
@@ -33,6 +37,8 @@ class QuestionServiceImpl(
     private val questionMapper: QuestionMapper
 ) : IQuestionService {
 
+    private val logger = LoggerFactory.getLogger(QuestionServiceImpl::class.java)
+
     // Create a shared question (manually created, available for copying)
     override fun createSharedOpenQuestion(request: OpenQuestionRequest): OpenQuestion {
         val question = OpenQuestion(
@@ -41,11 +47,21 @@ class QuestionServiceImpl(
             required = request.required,
             isShared = true
         )
-        return openQuestionRepository.save(question)
+
+        return try {
+            openQuestionRepository.save(question)
+        } catch (e: DataAccessException) {
+            logger.error("Failed to save shared open question: ${request.text}", e)
+            throw IllegalStateException("Failed to create shared open question", e)
+        }
     }
 
     // Create a shared closed question with possible answers
     override fun createSharedClosedQuestion(request: ClosedQuestionRequest): ClosedQuestion {
+        if (request.possibleAnswers.isEmpty()) {
+            throw IllegalArgumentException("Closed question must have at least one possible answer")
+        }
+
         val question = ClosedQuestion(
             text = request.text,
             description = request.description,
@@ -55,6 +71,9 @@ class QuestionServiceImpl(
         )
 
         request.possibleAnswers.forEachIndexed { index, answerText ->
+            if (answerText.isBlank()) {
+                throw IllegalArgumentException("Answer text cannot be blank at position $index")
+            }
             val answer = QuestionAnswer(
                 text = answerText,
                 displayOrder = index + 1
@@ -62,7 +81,12 @@ class QuestionServiceImpl(
             question.addPossibleAnswer(answer)
         }
 
-        return closedQuestionRepository.save(question)
+        return try {
+            closedQuestionRepository.save(question)
+        } catch (e: DataAccessException) {
+            logger.error("Failed to save shared closed question: ${request.text}", e)
+            throw IllegalStateException("Failed to create shared closed question", e)
+        }
     }
 
     override fun updateQuestion(id: Long, request: QuestionRequest): Question {
@@ -73,7 +97,7 @@ class QuestionServiceImpl(
         when (request) {
             is OpenQuestionRequest -> {
                 if (existingQuestion !is OpenQuestion) {
-                    throw IllegalArgumentException("Cannot change question type")
+                    throw IllegalArgumentException("Cannot change question type from ${existingQuestion::class.simpleName} to OpenQuestion")
                 }
                 existingQuestion.text = request.text
                 existingQuestion.description = request.description
@@ -81,8 +105,13 @@ class QuestionServiceImpl(
             }
             is ClosedQuestionRequest -> {
                 if (existingQuestion !is ClosedQuestion) {
-                    throw IllegalArgumentException("Cannot change question type")
+                    throw IllegalArgumentException("Cannot change question type from ${existingQuestion::class.simpleName} to ClosedQuestion")
                 }
+
+                if (request.possibleAnswers.isEmpty()) {
+                    throw IllegalArgumentException("Closed question must have at least one possible answer")
+                }
+
                 existingQuestion.text = request.text
                 existingQuestion.description = request.description
                 existingQuestion.required = request.required
@@ -91,6 +120,9 @@ class QuestionServiceImpl(
                 // Update possible answers
                 existingQuestion.possibleAnswers.clear()
                 request.possibleAnswers.forEachIndexed { index, answerText ->
+                    if (answerText.isBlank()) {
+                        throw IllegalArgumentException("Answer text cannot be blank at position $index")
+                    }
                     val answer = QuestionAnswer(
                         text = answerText,
                         displayOrder = index + 1
@@ -100,7 +132,17 @@ class QuestionServiceImpl(
             }
         }
 
-        return questionRepository.save(existingQuestion)
+        return try {
+            questionRepository.save(existingQuestion)
+        } catch (e: DataAccessException) {
+            logger.error("Failed to update question $id", e)
+            throw IllegalStateException("Failed to update question", e)
+        }
+        catch (e: DataIntegrityViolationException) {
+            logger.error("Cannot update question with user responses present $id", e)
+            throw IllegalStateException("Failed to update question, it has existing user responses", e)
+        }
+
     }
 
     override fun duplicateQuestion(id: Long): Question {
@@ -113,7 +155,12 @@ class QuestionServiceImpl(
         duplicatedQuestion.survey = null // Make it shared by default
         duplicatedQuestion.isShared = true
 
-        return questionRepository.save(duplicatedQuestion)
+        return try {
+            questionRepository.save(duplicatedQuestion)
+        } catch (e: DataAccessException) {
+            logger.error("Failed to duplicate question $id", e)
+            throw IllegalStateException("Failed to create question duplicate", e)
+        }
     }
 
     override fun deleteQuestion(id: Long) {
@@ -126,7 +173,15 @@ class QuestionServiceImpl(
             throw InvalidOperationException("Cannot delete question that is part of a survey")
         }
 
-        questionRepository.deleteById(id)
+        try {
+            questionRepository.deleteById(id)
+        } catch (e: DataIntegrityViolationException) {
+            logger.error("Data integrity violation while deleting question $id", e)
+            throw InvalidOperationException("Cannot delete question due to existing references")
+        } catch (e: DataAccessException) {
+            logger.error("Failed to delete question $id", e)
+            throw IllegalStateException("Failed to delete question", e)
+        }
     }
 
     // Copy a shared question to a survey
@@ -135,8 +190,8 @@ class QuestionServiceImpl(
             EntityNotFoundException("Question not found with id: $questionId")
         }
 
-        require(originalQuestion.isShared) {
-            "Only shared questions can be copied to surveys"
+        if (!originalQuestion.isShared) {
+            throw IllegalArgumentException("Only shared questions can be copied to surveys")
         }
 
         val survey = surveyRepository.findById(surveyId).orElseThrow {
@@ -149,18 +204,35 @@ class QuestionServiceImpl(
 
         // Add to survey
         survey.addQuestion(copiedQuestion)
-        surveyRepository.save(survey)
+
+        try {
+            surveyRepository.save(survey)
+        } catch (e: DataAccessException) {
+            logger.error("Failed to copy question $questionId to survey $surveyId", e)
+            throw IllegalStateException("Failed to add question to survey", e)
+        }
 
         return copiedQuestion
     }
 
     // Find all shared questions available for copying
     override fun findSharedQuestions(): List<Question> {
-        val questions = questionRepository.findShared()
-        questions.forEach { question ->
-            if (question is ClosedQuestion) {
-                Hibernate.initialize(question.possibleAnswers)
+        val questions = try {
+            questionRepository.findShared()
+        } catch (e: DataAccessException) {
+            logger.error("Failed to load shared questions", e)
+            throw IllegalStateException("Failed to retrieve shared questions", e)
+        }
+
+        try {
+            questions.forEach { question ->
+                if (question is ClosedQuestion) {
+                    Hibernate.initialize(question.possibleAnswers)
+                }
             }
+        } catch (e: LazyInitializationException) {
+            logger.error("Failed to initialize question data", e)
+            throw IllegalStateException("Failed to load complete question data", e)
         }
 
         return questions
@@ -168,8 +240,7 @@ class QuestionServiceImpl(
 
 
 
-    override fun findClosedSharedQuestionsPage(pageNumber: Int, pageSize: Int, sortFromOldest: Boolean): PaginatedResponse<QuestionResponse>
-    {
+    override fun findClosedSharedQuestionsPage(pageNumber: Int, pageSize: Int, sortFromOldest: Boolean): PaginatedResponse<QuestionResponse> {
         val sortDirection = if (sortFromOldest) {
             Sort.by("id").ascending()
         } else {
@@ -178,12 +249,17 @@ class QuestionServiceImpl(
 
         val pageable = PageRequest.of(pageNumber, pageSize, sortDirection)
 
-        val page = closedQuestionRepository.findSharedPage(pageable)
+        val page = try {
+            closedQuestionRepository.findSharedPage(pageable)
+        } catch (e: DataAccessException) {
+            logger.error("Failed to load closed shared questions page: page=$pageNumber, size=$pageSize", e)
+            throw IllegalStateException("Failed to retrieve closed shared questions", e)
+        }
+
         return questionMapper.toPageResponse(page)
     }
 
-    override fun findSharedCheckboxQuestionsPage(pageNumber: Int, pageSize: Int, sortFromOldest: Boolean): PaginatedResponse<QuestionResponse>
-    {
+    override fun findSharedCheckboxQuestionsPage(pageNumber: Int, pageSize: Int, sortFromOldest: Boolean): PaginatedResponse<QuestionResponse> {
         val sortDirection = if (sortFromOldest) {
             Sort.by("id").ascending()
         } else {
@@ -192,12 +268,17 @@ class QuestionServiceImpl(
 
         val pageable = PageRequest.of(pageNumber, pageSize, sortDirection)
 
-        val page = closedQuestionRepository.findSharedPageByType(SelectionType.MULTIPLE,pageable)
+        val page = try {
+            closedQuestionRepository.findSharedPageByType(SelectionType.MULTIPLE, pageable)
+        } catch (e: DataAccessException) {
+            logger.error("Failed to load checkbox shared questions page: page=$pageNumber, size=$pageSize", e)
+            throw IllegalStateException("Failed to retrieve checkbox shared questions", e)
+        }
+
         return questionMapper.toPageResponse(page)
     }
 
-    override fun findSharedDropdownQuestionsPage(pageNumber: Int, pageSize: Int, sortFromOldest: Boolean): PaginatedResponse<QuestionResponse>
-    {
+    override fun findSharedDropdownQuestionsPage(pageNumber: Int, pageSize: Int, sortFromOldest: Boolean): PaginatedResponse<QuestionResponse> {
         val sortDirection = if (sortFromOldest) {
             Sort.by("id").ascending()
         } else {
@@ -206,12 +287,17 @@ class QuestionServiceImpl(
 
         val pageable = PageRequest.of(pageNumber, pageSize, sortDirection)
 
-        val page = closedQuestionRepository.findSharedPageByType(SelectionType.SINGLE,pageable)
+        val page = try {
+            closedQuestionRepository.findSharedPageByType(SelectionType.SINGLE, pageable)
+        } catch (e: DataAccessException) {
+            logger.error("Failed to load dropdown shared questions page: page=$pageNumber, size=$pageSize", e)
+            throw IllegalStateException("Failed to retrieve dropdown shared questions", e)
+        }
+
         return questionMapper.toPageResponse(page)
     }
 
-    override fun findOpenSharedQuestionsPage(pageNumber: Int, pageSize: Int, sortFromOldest: Boolean): PaginatedResponse<QuestionResponse>
-    {
+    override fun findOpenSharedQuestionsPage(pageNumber: Int, pageSize: Int, sortFromOldest: Boolean): PaginatedResponse<QuestionResponse> {
         val sortDirection = if (sortFromOldest) {
             Sort.by("id").ascending()
         } else {
@@ -220,12 +306,17 @@ class QuestionServiceImpl(
 
         val pageable = PageRequest.of(pageNumber, pageSize, sortDirection)
 
-        val page = openQuestionRepository.findSharedPage(pageable)
+        val page = try {
+            openQuestionRepository.findSharedPage(pageable)
+        } catch (e: DataAccessException) {
+            logger.error("Failed to load open shared questions page: page=$pageNumber, size=$pageSize", e)
+            throw IllegalStateException("Failed to retrieve open shared questions", e)
+        }
+
         return questionMapper.toPageResponse(page)
     }
 
-    override fun findSharedQuestionsPage(pageNumber: Int, pageSize: Int, sortFromOldest: Boolean): PaginatedResponse<QuestionResponse>
-    {
+    override fun findSharedQuestionsPage(pageNumber: Int, pageSize: Int, sortFromOldest: Boolean): PaginatedResponse<QuestionResponse> {
         val sortDirection = if (sortFromOldest) {
             Sort.by("id").ascending()
         } else {
@@ -234,7 +325,13 @@ class QuestionServiceImpl(
 
         val pageable = PageRequest.of(pageNumber, pageSize, sortDirection)
 
-        val page = questionRepository.findSharedPage(pageable)
+        val page = try {
+            questionRepository.findSharedPage(pageable)
+        } catch (e: DataAccessException) {
+            logger.error("Failed to load shared questions page: page=$pageNumber, size=$pageSize", e)
+            throw IllegalStateException("Failed to retrieve shared questions", e)
+        }
+
         return questionMapper.toPageResponse(page)
     }
 
@@ -260,7 +357,13 @@ class QuestionServiceImpl(
         )
 
         survey.addQuestion(question)
-        surveyRepository.save(survey)
+
+        try {
+            surveyRepository.save(survey)
+        } catch (e: DataAccessException) {
+            logger.error("Failed to create survey-specific open question for survey $surveyId", e)
+            throw IllegalStateException("Failed to create question", e)
+        }
 
         return question
     }
@@ -275,6 +378,10 @@ class QuestionServiceImpl(
         selectionType: SelectionType,
         possibleAnswers: List<String>
     ): ClosedQuestion {
+        if (possibleAnswers.isEmpty()) {
+            throw IllegalArgumentException("Closed question must have at least one possible answer")
+        }
+
         val survey = surveyRepository.findById(surveyId).orElseThrow {
             EntityNotFoundException("Survey not found with id: $surveyId")
         }
@@ -289,6 +396,9 @@ class QuestionServiceImpl(
         )
 
         possibleAnswers.forEachIndexed { index, answerText ->
+            if (answerText.isBlank()) {
+                throw IllegalArgumentException("Answer text cannot be blank at position $index")
+            }
             val answer = QuestionAnswer(
                 text = answerText,
                 displayOrder = index + 1
@@ -297,7 +407,13 @@ class QuestionServiceImpl(
         }
 
         survey.addQuestion(question)
-        surveyRepository.save(survey)
+
+        try {
+            surveyRepository.save(survey)
+        } catch (e: DataAccessException) {
+            logger.error("Failed to create survey-specific closed question for survey $surveyId", e)
+            throw IllegalStateException("Failed to create question", e)
+        }
 
         return question
     }
