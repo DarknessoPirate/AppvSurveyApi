@@ -3,6 +3,7 @@ package com.darknessopirate.appvsurveyapi.domain.service
 import com.darknessopirate.appvsurveyapi.api.dto.PaginatedResponse
 import com.darknessopirate.appvsurveyapi.api.dto.request.survey.CreateSurveyWithQuestionsRequest
 import com.darknessopirate.appvsurveyapi.api.dto.request.survey.UpdateSurveyRequest
+import com.darknessopirate.appvsurveyapi.api.dto.response.survey.SurveyCountsResponse
 import com.darknessopirate.appvsurveyapi.api.dto.response.survey.SurveyResponse
 import com.darknessopirate.appvsurveyapi.domain.entity.question.Question
 import com.darknessopirate.appvsurveyapi.domain.entity.survey.Survey
@@ -28,6 +29,7 @@ interface ISurveyService {
     // Copy survey (with all questions)
     fun copySurvey(surveyId: Long, newTitle: String): Survey
 
+    fun getSurveyCounts(): SurveyCountsResponse
     fun findAllSurveys(): List<Survey>
     // Delete survey and all related data
     fun deleteSurvey(surveyId: Long)

@@ -8,6 +8,7 @@ import com.darknessopirate.appvsurveyapi.api.dto.request.survey.UpdateSurveyRequ
 import com.darknessopirate.appvsurveyapi.api.dto.request.survey.CreateSurveyWithQuestionsRequest
 import com.darknessopirate.appvsurveyapi.api.dto.response.accessCode.AccessCodeListResponse
 import com.darknessopirate.appvsurveyapi.api.dto.response.accessCode.AccessCodeResponse
+import com.darknessopirate.appvsurveyapi.api.dto.response.survey.SurveyCountsResponse
 import com.darknessopirate.appvsurveyapi.api.dto.response.survey.SurveyDetailResponse
 import com.darknessopirate.appvsurveyapi.api.dto.response.survey.SurveyResponse
 import com.darknessopirate.appvsurveyapi.domain.service.IAccessCodeService
@@ -53,6 +54,11 @@ class SurveyController(
         return ResponseEntity.ok(surveyDetailedResponse)
     }
 
+    @GetMapping("/counts")
+    fun getSurveyCounts(): ResponseEntity<SurveyCountsResponse> {
+        val counts = surveyService.getSurveyCounts()
+        return ResponseEntity.ok(counts)
+    }
 
     @GetMapping("/all")
     fun getAllSurveys(): ResponseEntity<List<SurveyResponse>> {

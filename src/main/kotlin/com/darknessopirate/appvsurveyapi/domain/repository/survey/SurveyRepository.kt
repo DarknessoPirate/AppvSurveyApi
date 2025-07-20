@@ -61,4 +61,20 @@ interface SurveyRepository : JpaRepository<Survey, Long> {
 
 
 
+    @Query("SELECT COUNT(s) FROM Survey s")
+    fun countAllSurveys(): Long
+
+    @Query("SELECT COUNT(s) FROM Survey s WHERE s.isActive = true")
+    fun countActiveSurveys(): Long
+
+    @Query("SELECT COUNT(s) FROM Survey s WHERE s.isActive = false")
+    fun countInactiveSurveys(): Long
+
+    @Query("SELECT COUNT(s) FROM Survey s WHERE s.expiresAt IS NOT NULL AND s.expiresAt < CURRENT_DATE")
+    fun countExpiredSurveys(): Long
+
+    @Query("SELECT COUNT(s) FROM Survey s WHERE s.expiresAt IS NOT NULL AND s.expiresAt BETWEEN :startDate AND :endDate")
+    fun countExpiringSurveys(@Param("startDate") startDate: LocalDate, @Param("endDate") endDate: LocalDate): Long
+
+
 }

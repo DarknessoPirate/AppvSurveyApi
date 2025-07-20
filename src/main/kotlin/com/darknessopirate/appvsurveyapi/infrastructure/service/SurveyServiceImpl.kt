@@ -2,6 +2,7 @@ package com.darknessopirate.appvsurveyapi.infrastructure.service
 import com.darknessopirate.appvsurveyapi.api.dto.PaginatedResponse
 import com.darknessopirate.appvsurveyapi.api.dto.request.survey.CreateSurveyWithQuestionsRequest
 import com.darknessopirate.appvsurveyapi.api.dto.request.survey.UpdateSurveyRequest
+import com.darknessopirate.appvsurveyapi.api.dto.response.survey.SurveyCountsResponse
 import com.darknessopirate.appvsurveyapi.api.dto.response.survey.SurveyResponse
 import com.darknessopirate.appvsurveyapi.domain.entity.question.ClosedQuestion
 import com.darknessopirate.appvsurveyapi.domain.entity.question.Question
@@ -290,6 +291,31 @@ class SurveyServiceImpl(
         } catch (e: DataAccessException) {
             logger.error("Failed to save copied survey: $newTitle", e)
             throw IllegalStateException("Failed to create survey copy", e)
+        }
+    }
+
+    override fun getSurveyCounts(): SurveyCountsResponse {
+        try {
+            val totalSurveys = surveyRepository.countAllSurveys()
+            val activeSurveys = surveyRepository.countActiveSurveys()
+            val inactiveSurveys = surveyRepository.countInactiveSurveys()
+            val expiredSurveys = surveyRepository.countExpiredSurveys()
+
+            // For expiring surveys, use the same logic as the existing method (today to tomorrow)
+            val now = LocalDate.now()
+            val tomorrow = now.plusDays(1)
+            val expiringSurveys = surveyRepository.countExpiringSurveys(now, tomorrow)
+
+            return SurveyCountsResponse(
+                totalSurveys = totalSurveys,
+                activeSurveys = activeSurveys,
+                inactiveSurveys = inactiveSurveys,
+                expiredSurveys = expiredSurveys,
+                expiringSurveys = expiringSurveys
+            )
+        } catch (e: DataAccessException) {
+            logger.error("Failed to get survey counts", e)
+            throw IllegalStateException("Failed to retrieve survey counts", e)
         }
     }
 
