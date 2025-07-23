@@ -6,6 +6,7 @@ import com.darknessopirate.appvsurveyapi.api.dto.request.question.OpenQuestionRe
 import com.darknessopirate.appvsurveyapi.api.dto.request.question.QuestionRequest
 import com.darknessopirate.appvsurveyapi.api.dto.response.question.ClosedQuestionResponse
 import com.darknessopirate.appvsurveyapi.api.dto.response.question.OpenQuestionResponse
+import com.darknessopirate.appvsurveyapi.api.dto.response.question.QuestionCountsResponse
 import com.darknessopirate.appvsurveyapi.api.dto.response.question.QuestionResponse
 import com.darknessopirate.appvsurveyapi.domain.service.IQuestionService
 import com.darknessopirate.appvsurveyapi.domain.service.ISurveyService
@@ -58,6 +59,12 @@ class QuestionController(
     fun deleteQuestion(@PathVariable id: Long): ResponseEntity<Void> {
         questionService.deleteQuestion(id)
         return ResponseEntity.noContent().build()
+    }
+
+    @GetMapping("/counts")
+    fun getQuestionCounts(): ResponseEntity<QuestionCountsResponse> {
+        val counts = questionService.getQuestionCounts()
+        return ResponseEntity.ok(counts)
     }
 
     @GetMapping("/shared")

@@ -17,4 +17,6 @@ interface OpenQuestionRepository : JpaRepository<OpenQuestion, Long> {
     @Query("SELECT q FROM OpenQuestion q WHERE q.isShared = true AND q.survey IS NULL")
     fun findSharedPage(pageable: Pageable): Page<OpenQuestion>
 
+    @Query("SELECT COUNT(q) FROM OpenQuestion q WHERE q.isShared = true AND q.survey IS NULL")
+    fun countAllOpenQuestions(): Long
 }

@@ -22,5 +22,9 @@ interface ClosedQuestionRepository : JpaRepository<ClosedQuestion, Long> {
         WHERE q.isShared = true AND q.survey IS NULL AND q.selectionType = :selectionType""")
     fun findSharedPageByType(selectionType: SelectionType, pageable: Pageable): Page<ClosedQuestion>
 
+    @Query("SELECT COUNT(q) FROM ClosedQuestion q WHERE q.isShared = true AND q.survey IS NULL")
+    fun countAllClosedQuestions(): Long
 
+    @Query("SELECT COUNT(q) FROM ClosedQuestion q WHERE q.selectionType = :selectionType AND q.isShared = true AND q.survey IS NULL")
+    fun countBySelectionType(selectionType: SelectionType): Long
 }

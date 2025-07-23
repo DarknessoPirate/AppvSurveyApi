@@ -20,4 +20,6 @@ interface QuestionRepository : JpaRepository<Question, Long> {
     @Query("SELECT q FROM Question q WHERE q.isShared = true AND q.survey IS NULL")
     fun findSharedPage(pageable:Pageable) : Page<Question>
 
+    @Query("SELECT COUNT(q) FROM Question q WHERE q.isShared = true AND q.survey IS NULL")
+    fun countSharedQuestions(): Long
 }

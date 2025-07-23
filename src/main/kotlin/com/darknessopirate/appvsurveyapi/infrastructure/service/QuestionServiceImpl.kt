@@ -3,6 +3,7 @@ import com.darknessopirate.appvsurveyapi.api.dto.PaginatedResponse
 import com.darknessopirate.appvsurveyapi.api.dto.request.question.ClosedQuestionRequest
 import com.darknessopirate.appvsurveyapi.api.dto.request.question.OpenQuestionRequest
 import com.darknessopirate.appvsurveyapi.api.dto.request.question.QuestionRequest
+import com.darknessopirate.appvsurveyapi.api.dto.response.question.QuestionCountsResponse
 import com.darknessopirate.appvsurveyapi.api.dto.response.question.QuestionResponse
 import com.darknessopirate.appvsurveyapi.domain.entity.question.ClosedQuestion
 import com.darknessopirate.appvsurveyapi.domain.entity.question.OpenQuestion
@@ -213,6 +214,27 @@ class QuestionServiceImpl(
         }
 
         return copiedQuestion
+    }
+
+    override fun getQuestionCounts(): QuestionCountsResponse {
+        try {
+            val sharedQuestions = questionRepository.countSharedQuestions()
+            val openQuestions = openQuestionRepository.countAllOpenQuestions()
+            val closedQuestions = closedQuestionRepository.countAllClosedQuestions()
+            val checkboxQuestions = closedQuestionRepository.countBySelectionType(SelectionType.MULTIPLE)
+            val dropdownQuestions = closedQuestionRepository.countBySelectionType(SelectionType.SINGLE)
+
+            return QuestionCountsResponse(
+                sharedQuestions = sharedQuestions,
+                openQuestions = openQuestions,
+                closedQuestions = closedQuestions,
+                checkboxQuestions = checkboxQuestions,
+                dropdownQuestions = dropdownQuestions
+            )
+        } catch (e: DataAccessException) {
+            logger.error("Failed to get question counts", e)
+            throw IllegalStateException("Failed to retrieve question counts", e)
+        }
     }
 
     // Find all shared questions available for copying

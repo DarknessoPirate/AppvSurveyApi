@@ -236,10 +236,11 @@ class SurveySummaryServiceImpl(
                     0.0
                 }
 
+
                 val formattedPercentage = try {
-                    String.format("%.2f", percentage).toDouble()
-                } catch (e: NumberFormatException) {
-                    logger.warn("Number format error for percentage $percentage", e)
+                    kotlin.math.round(percentage * 100) / 100.0
+                } catch (e: ArithmeticException) {
+                    logger.warn("Arithmetic error for percentage $percentage", e)
                     0.0
                 }
 
