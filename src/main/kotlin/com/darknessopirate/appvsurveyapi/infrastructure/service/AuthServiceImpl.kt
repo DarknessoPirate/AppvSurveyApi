@@ -39,7 +39,48 @@ class AuthServiceImpl(
 
     fun createAdminUserIfNotExists() {
         try {
-            if (!userRepository.existsByEmail(adminEmail)) {
+            // Find all existing admin users
+            val existingAdmins = userRepository.findByRole("ADMIN")
+
+            // Check if current config admin already exists and is up to date
+            val currentConfigAdmin = existingAdmins.find { it.email == adminEmail }
+
+            if (currentConfigAdmin != null) {
+                // Admin with current email exists, check if username and password match
+                var needsUpdate = false
+
+                if (currentConfigAdmin.username != adminUsername) {
+                    currentConfigAdmin.username = adminUsername
+                    needsUpdate = true
+                    logger.info("Updating admin username to: $adminUsername")
+                }
+
+                if (!passwordEncoder.matches(adminPassword, currentConfigAdmin.password)) {
+                    currentConfigAdmin.password = passwordEncoder.encode(adminPassword)
+                    needsUpdate = true
+                    logger.info("Updating admin password")
+                }
+
+                if (needsUpdate) {
+                    userRepository.save(currentConfigAdmin)
+                    logger.info("Admin user updated successfully")
+                }
+
+                // Clean up any other admin accounts (stale ones)
+                val staleAdmins = existingAdmins.filter { it.id != currentConfigAdmin.id }
+                if (staleAdmins.isNotEmpty()) {
+                    cleanupStaleAdminAccounts(staleAdmins)
+                }
+
+            } else {
+                // No admin with current email exists
+                if (existingAdmins.isNotEmpty()) {
+                    // There are admin accounts but with different emails (stale)
+                    logger.info("Found ${existingAdmins.size} stale admin account(s), cleaning up...")
+                    cleanupStaleAdminAccounts(existingAdmins)
+                }
+
+                // Create new admin user with current config
                 val adminUser = User(
                     username = adminUsername,
                     email = adminEmail,
@@ -47,16 +88,36 @@ class AuthServiceImpl(
                     role = "ADMIN"
                 )
                 userRepository.save(adminUser)
-                logger.info("Admin user created successfully")
-            } else {
-                logger.debug("Admin user already exists")
+                logger.info("New admin user created successfully with email: $adminEmail")
             }
+
         } catch (e: DataAccessException) {
-            logger.error("Failed to create admin user", e)
+            logger.error("Failed to create/update admin user", e)
             throw IllegalStateException("Failed to initialize admin user", e)
         } catch (e: Exception) {
-            logger.error("Unexpected error while creating admin user", e)
+            logger.error("Unexpected error while creating/updating admin user", e)
             throw IllegalStateException("Failed to initialize application", e)
+        }
+    }
+
+    private fun cleanupStaleAdminAccounts(staleAdmins: List<User>) {
+        try {
+            staleAdmins.forEach { admin ->
+                // First, clean up any refresh tokens for this admin
+                try {
+                    refreshTokenRepository.deleteByUser(admin)
+                    logger.debug("Cleaned up refresh tokens for stale admin: ${admin.email}")
+                } catch (e: DataAccessException) {
+                    logger.warn("Failed to clean up refresh tokens for admin: ${admin.email}", e)
+                }
+
+                // Delete the admin user
+                userRepository.delete(admin)
+                logger.info("Deleted stale admin account: ${admin.email} (username: ${admin.username})")
+            }
+        } catch (e: DataAccessException) {
+            logger.error("Failed to cleanup stale admin accounts", e)
+            throw IllegalStateException("Failed to cleanup stale admin accounts", e)
         }
     }
 

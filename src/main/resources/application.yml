@@ -22,11 +22,11 @@ spring:
 # Admin user configuration
 app:
     admin:
-        username: admin
-        email: admin@survey.com
-        password: admin123
+        username: admin_username
+        email: admin@email.com
+        password: admin_password
     jwt:
-        secret: mySecretKey123456789012345678901234567890
+        secret: aSecretSecureKey123456789012345678901234567890
         expiration: 86400000 # 24 hours in milliseconds
 
 # Logging configuration (keep as is)

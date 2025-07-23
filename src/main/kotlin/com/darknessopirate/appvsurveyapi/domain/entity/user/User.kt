@@ -14,13 +14,13 @@ data class User(
     val id: Long? = null,
 
     @Column(nullable = false, unique = true)
-    val username: String,
+    var username: String,
 
     @Column(unique = true, length = 100, nullable = false)
     val email: String,
 
     @Column(nullable = false)
-    val password: String,
+    var password: String,
 
     @Column(nullable = false)
     val role: String = "ADMIN", // For simplicity, just using string
