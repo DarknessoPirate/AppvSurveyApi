@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface ClosedQuestionRepository : JpaRepository<ClosedQuestion, Long> {
-    // Find shared questions with answers
+
     @Query("SELECT DISTINCT q FROM ClosedQuestion q LEFT JOIN FETCH q.possibleAnswers WHERE q.isShared = true AND q.survey IS NULL")
     fun findSharedWithAnswers(): List<ClosedQuestion>
 

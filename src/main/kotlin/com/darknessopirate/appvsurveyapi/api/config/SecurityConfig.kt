@@ -56,8 +56,11 @@ class SecurityConfig(
 
         // Allow specific origins
         configuration.allowedOrigins = listOf(
-            "http://localhost:4200",    // Angular dev server
-            "http://127.0.0.1:4200"     // Alternative localhost
+            "http://localhost:38471",    // Custom frontend port (Docker)
+            "http://localhost:4200",     // Development server
+            "http://127.0.0.1:38471",    // Alternative localhost
+            "http://127.0.0.1:4200",      // Alternative localhost dev
+            "http://localhost:41259"
         )
 
         // Allow specific methods

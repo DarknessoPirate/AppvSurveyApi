@@ -151,7 +151,6 @@ class SurveySubmissionServiceImpl(
         val submission = submittedSurveyRepository.findByIdWithSurveyAndAnswers(submissionId)
             ?: return null
 
-        // Initialize lazy-loaded collections with proper error handling
         try {
             Hibernate.initialize(submission.userAnswers)
 
@@ -187,7 +186,7 @@ class SurveySubmissionServiceImpl(
     private fun validateRequiredQuestions(survey: Survey, answers: List<AnswerRequest>) {
         val requiredQuestionIds = survey.questions
             .filter { it.required }
-            .mapNotNull { it.id } // Filter out questions with null IDs
+            .mapNotNull { it.id }
 
         val answeredQuestionIds = answers.map { it.questionId }
 

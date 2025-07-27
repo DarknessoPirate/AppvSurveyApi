@@ -16,11 +16,8 @@ class SurveyMapper(
     private val accessCodeMapper: AccessCodeMapper,
     private val surveySummaryService: ISurveySummaryService
 ){
-    /*
-    * REQUESTS
-    */
 
-    // CreateSurveyRequest -> Survey
+
     fun toEntity(request: UpdateSurveyRequest): Survey {
         return Survey(
             title = request.title,
@@ -39,11 +36,7 @@ class SurveyMapper(
         )
     }
 
-    /*
-    * RESPONSES
-    */
 
-    // Survey -> SurveyResponse
     fun toResponse(entity: Survey): SurveyResponse = SurveyResponse(
         id = entity.id!!,
         title = entity.title,
@@ -56,7 +49,7 @@ class SurveyMapper(
         hasSummaryPassword = surveySummaryService.passwordExists(entity.id!!)
     )
 
-    // Survey -> SurveyDetailResponse
+
     fun toDetailResponse(entity: Survey): SurveyDetailResponse = SurveyDetailResponse(
         id = entity.id!!,
         title = entity.title,

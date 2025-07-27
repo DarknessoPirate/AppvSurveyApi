@@ -9,11 +9,11 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 
-// Base Question Repository (for polymorphic queries)
+
 @Repository
 interface QuestionRepository : JpaRepository<Question, Long> {
 
-    // Find shared questions (available for copying)
+
     @Query("SELECT q FROM Question q WHERE q.isShared = true AND q.survey IS NULL")
     fun findShared(): List<Question>
 

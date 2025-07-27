@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface OpenQuestionRepository : JpaRepository<OpenQuestion, Long> {
-    // Find shared questions
+
     @Query("SELECT q FROM OpenQuestion q WHERE q.isShared = true AND q.survey IS NULL")
     fun findShared(): List<OpenQuestion>
 

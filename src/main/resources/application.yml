@@ -1,40 +1,40 @@
 spring:
     datasource:
-        url: jdbc:postgresql://localhost:5432/SurveyDB
-        username: surveyuser
-        password: surveypass
+        url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:SurveyDB}
+        username: ${DB_USER:surveyuser}
+        password: ${DB_PASSWORD:surveypass}
         driver-class-name: org.postgresql.Driver
     jpa:
         database-platform: org.hibernate.dialect.PostgreSQLDialect
         hibernate:
-            ddl-auto: update  # Keep this as update to preserve data between restarts
+            ddl-auto: update
         properties:
             hibernate:
                 format_sql: true
-                show_sql: true
+                show_sql: ${SHOW_SQL:false}
                 jdbc:
                     lob:
                         non_contextual_creation: true
         open-in-view: false
-        # allow data.sql to run after tables are created/updated
         defer-datasource-initialization: true
 
 # Admin user configuration
 app:
     admin:
-        username: admin_username
-        email: admin@email.com
-        password: admin_password
+        username: ${ADMIN_USERNAME:admin}
+        email: ${ADMIN_EMAIL:admin@survey.com}
+        password: ${ADMIN_PASSWORD:admin123}
     jwt:
-        secret: aSecretSecureKey123456789012345678901234567890
-        expiration: 86400000 # 24 hours in milliseconds
+        secret: ${JWT_SECRET:mySecretKey123456789012345678901234567890}
+        expiration: ${JWT_EXPIRATION:86400000}
 
-# Logging configuration (keep as is)
+# Logging configuration
 logging:
     level:
-        org.hibernate.SQL: DEBUG
-        org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-        com.darknessopirate.appvsurveyapi: DEBUG
+        org.hibernate.SQL: ${LOG_SQL:WARN}
+        org.hibernate.type.descriptor.sql.BasicBinder: ${LOG_SQL_PARAMS:WARN}
+        com.darknessopirate.appvsurveyapi: ${LOG_APP:INFO}
+        root: ${LOG_ROOT:INFO}
 
 # Swagger/OpenAPI configuration
 springdoc:
@@ -42,7 +42,10 @@ springdoc:
         path: /api-docs
     swagger-ui:
         path: /swagger-ui.html
-        operations-sorter: method & alpha
+        operations-sorter: method
         tags-sorter: alpha
-
     default-produces-media-type: application/json
+
+# Server configuration
+server:
+    port: 8080

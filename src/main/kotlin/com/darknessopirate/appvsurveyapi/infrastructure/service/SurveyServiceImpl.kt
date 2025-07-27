@@ -301,7 +301,7 @@ class SurveyServiceImpl(
             val inactiveSurveys = surveyRepository.countInactiveSurveys()
             val expiredSurveys = surveyRepository.countExpiredSurveys()
 
-            // For expiring surveys, use the same logic as the existing method (today to tomorrow)
+
             val now = LocalDate.now()
             val tomorrow = now.plusDays(1)
             val expiringSurveys = surveyRepository.countExpiringSurveys(now, tomorrow)
